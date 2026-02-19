@@ -698,12 +698,12 @@ async function main() {
     const { head } = await import("@vercel/blob");
     try {
       await head(PLAY_FLAG_PATH, { token: BLOB_READ_WRITE_TOKEN });
-      logStep("Play flag found. Proceeding with generation.");
+      logStep("Play flag found (no plays since last generation). Skipping generation.");
+      process.exit(0);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       if (!/not found/i.test(message)) throw err;
-      logStep("No play flag found. Skipping generation.");
-      process.exit(0);
+      logStep("Play flag missing (someone played). Proceeding with generation.");
     }
   } else if (FORCE_GENERATE) {
     logStep("Force mode enabled (--force). Ignoring play flag.");
@@ -795,7 +795,7 @@ async function main() {
     writeFileSync(outPath, payload, "utf8");
     console.log(`Done! Written to ${outPath}`);
   } else {
-    const { del, put } = await import("@vercel/blob");
+    const { put } = await import("@vercel/blob");
     const blob = await put("daily-game.json", payload, {
       access: "public",
       addRandomSuffix: false,
@@ -804,14 +804,14 @@ async function main() {
       cacheControlMaxAge: 3600,
       token: BLOB_READ_WRITE_TOKEN,
     });
-    try {
-      await del(PLAY_FLAG_PATH, { token: BLOB_READ_WRITE_TOKEN });
-      logStep("Cleared play flag after successful generation.");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      if (!/not found/i.test(message)) throw err;
-      logStep("Play flag was already absent after generation.");
-    }
+    await put(PLAY_FLAG_PATH, "no-plays-since-last-generation", {
+      access: "public",
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      contentType: "text/plain; charset=utf-8",
+      token: BLOB_READ_WRITE_TOKEN,
+    });
+    logStep("Recreated play flag after successful generation.");
     console.log(`Done! Blob URL: ${blob.url}`);
   }
 }

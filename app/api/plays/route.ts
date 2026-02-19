@@ -1,4 +1,4 @@
-import { put } from "@vercel/blob";
+import { del } from "@vercel/blob";
 
 const PLAY_FLAG_PATH = "play-flag.txt";
 
@@ -7,12 +7,7 @@ export async function POST() {
   if (!token) return new Response(null, { status: 204 });
 
   try {
-    await put(PLAY_FLAG_PATH, String(Date.now()), {
-      access: "public",
-      addRandomSuffix: false,
-      contentType: "text/plain; charset=utf-8",
-      token,
-    });
+    await del(PLAY_FLAG_PATH, { token });
   } catch {}
 
   return new Response(null, { status: 204 });
