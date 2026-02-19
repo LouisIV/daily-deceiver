@@ -1,0 +1,149 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=IM+Fell+English:ital@0;1&family=UnifrakturMaguntia&family=Playfair+Display+SC:wght@400;700&display=swap');
+
+:root {
+  --ink: #1c1008;
+  --paper: #f5ecd7;
+  --cream: #fdf8ee;
+  --aged: #e8d9b8;
+  --rule: #2a1a08;
+  --red: #8b1a1a;
+  --green: #1a3d10;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--paper);
+}
+
+.masthead-title {
+  font-family: 'UnifrakturMaguntia', cursive;
+  font-size: clamp(36px, 8vw, 80px);
+  color: var(--ink);
+  line-height: 1;
+  letter-spacing: 2px;
+}
+
+.clipping-body {
+  font-family: 'IM Fell English', Georgia, serif;
+  font-size: clamp(13px, 2vw, 16px);
+  line-height: 1.75;
+  color: var(--ink);
+  text-align: justify;
+  hyphens: auto;
+}
+
+.drop-cap::first-letter {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 3.8em;
+  font-weight: 900;
+  float: left;
+  line-height: 0.75;
+  padding-right: 6px;
+  padding-top: 4px;
+  color: var(--ink);
+}
+
+.headline {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.subhead {
+  font-family: 'Playfair Display SC', Georgia, serif;
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--ink);
+  opacity: 0.65;
+}
+
+.ornament {
+  font-family: 'IM Fell English', Georgia, serif;
+  color: var(--ink);
+  opacity: 0.4;
+}
+
+.rule-thick {
+  border: none;
+  border-top: 3px solid var(--rule);
+  margin: 0;
+}
+
+.rule-thin {
+  border: none;
+  border-top: 1px solid var(--rule);
+  margin: 0;
+}
+
+.rule-double {
+  border: none;
+  border-top: 3px double var(--rule);
+  margin: 0;
+}
+
+/* Paper texture overlay */
+.paper-texture {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes stampIn {
+  0% {
+    opacity: 0;
+    transform: scale(1.3) rotate(-2deg);
+  }
+  60% {
+    transform: scale(0.95) rotate(0.5deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+button {
+  cursor: pointer;
+}
+
+button:hover {
+  filter: brightness(1.15);
+}
+
+button:active {
+  transform: scale(0.97);
+}
