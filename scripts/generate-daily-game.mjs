@@ -1,16 +1,19 @@
-import { put } from "@vercel/blob";
+import { writeFileSync } from "fs";
+import { resolve, dirname } from "path";
+import { fileURLToPath } from "url";
 
 /* ─── Config ─────────────────────────────────────────────────────────────── */
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const BLOB_READ_WRITE_TOKEN = process.env.BLOB_READ_WRITE_TOKEN;
+const LOCAL_MODE = process.argv.includes("--local") || !BLOB_READ_WRITE_TOKEN;
 
 if (!ANTHROPIC_API_KEY) {
   console.error("Missing ANTHROPIC_API_KEY");
   process.exit(1);
 }
-if (!BLOB_READ_WRITE_TOKEN) {
-  console.error("Missing BLOB_READ_WRITE_TOKEN");
-  process.exit(1);
+
+if (LOCAL_MODE && !BLOB_READ_WRITE_TOKEN) {
+  console.log("No BLOB_READ_WRITE_TOKEN — running in local mode.");
 }
 
 /* ─── Chronicling America ─────────────────────────────────────────────────── */
@@ -166,37 +169,44 @@ Return ONLY raw JSON array, no markdown:
 
 /* ─── Main ────────────────────────────────────────────────────────────────── */
 async function main() {
-  console.log("Generating daily game…");
+  console.log(`Generating daily game (${LOCAL_MODE ? "local" : "blob"} mode)…`);
 
   console.log("Fetching real snippets from Chronicling America…");
   const reals = await fetchRealSnippets(5);
   console.log(`  Got ${reals.length} real snippets`);
 
-  console.log("Generating fake snippets…");
-  const fakes = await generateFakeSnippets(5);
+  const fakeCount = Math.max(5, 10 - reals.length);
+  console.log(`Generating ${fakeCount} fake snippets…`);
+  const fakes = await generateFakeSnippets(fakeCount);
   console.log(`  Got ${fakes.length} fake snippets`);
 
   const snippets = [...reals, ...fakes];
-  if (snippets.length < 6) {
-    throw new Error(`Not enough snippets: got ${snippets.length}, need at least 6`);
+  if (snippets.length < 5) {
+    throw new Error(`Not enough snippets: got ${snippets.length}`);
   }
 
-  const payload = JSON.stringify({
-    snippets,
-    generatedAt: new Date().toISOString(),
-    date: new Date().toISOString().slice(0, 10),
-  });
+  const payload = JSON.stringify(
+    { snippets, generatedAt: new Date().toISOString(), date: new Date().toISOString().slice(0, 10) },
+    null,
+    2
+  );
 
-  console.log("Uploading to Vercel Blob…");
-  const blob = await put("daily-game.json", payload, {
-    access: "public",
-    addRandomSuffix: false,
-    contentType: "application/json",
-    cacheControlMaxAge: 3600,
-    token: BLOB_READ_WRITE_TOKEN,
-  });
-
-  console.log(`Done! Blob URL: ${blob.url}`);
+  if (LOCAL_MODE) {
+    const __dirname = dirname(fileURLToPath(import.meta.url));
+    const outPath = resolve(__dirname, "../public/fallback-game.json");
+    writeFileSync(outPath, payload, "utf8");
+    console.log(`Done! Written to ${outPath}`);
+  } else {
+    const { put } = await import("@vercel/blob");
+    const blob = await put("daily-game.json", payload, {
+      access: "public",
+      addRandomSuffix: false,
+      contentType: "application/json",
+      cacheControlMaxAge: 3600,
+      token: BLOB_READ_WRITE_TOKEN,
+    });
+    console.log(`Done! Blob URL: ${blob.url}`);
+  }
 }
 
 main().catch((err) => {

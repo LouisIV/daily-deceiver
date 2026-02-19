@@ -1,5 +1,6 @@
 # dependencies
 node_modules
+.pnpm-store
 
 # next.js
 .next
@@ -22,3 +23,5 @@ pnpm-debug.log*
 .DS_Store
 
 .vibe/
+
+
