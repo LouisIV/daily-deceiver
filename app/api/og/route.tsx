@@ -19,7 +19,13 @@ async function loadGoogleFont(font: string, text: string) {
 export async function GET(request: Request) {
   const displayText = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789,.?!\'"·-';
   const textureUrl = `data:image/svg+xml;base64,${Buffer.from(paperTextureSvgString()).toString('base64')}`;
-  
+
+  // Gradient Bayer — 2×2 checkerboard masked left-to-right:
+  // invisible over CAN/YOU/SPOT, ramps up over THE, fully opaque over FAKES?
+  // Gradient stops calibrated to space-between layout (~58% = start of THE, ~76% = start of FAKES?)
+  const bayerSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="90"><defs><pattern id="b" x="0" y="0" width="4" height="4" patternUnits="userSpaceOnUse"><rect x="0" y="0" width="2" height="2" fill="#f5ecd7"/><rect x="2" y="2" width="2" height="2" fill="#f5ecd7"/></pattern><linearGradient id="g" x1="0" y1="0" x2="1" y2="0"><stop offset="55%" stop-color="black"/><stop offset="80%" stop-color="white"/></linearGradient><mask id="m"><rect width="100%" height="100%" fill="url(#g)"/></mask></defs><rect width="100%" height="100%" fill="url(#b)" mask="url(#m)"/></svg>`;
+  const bayerUrl = `data:image/svg+xml;base64,${Buffer.from(bayerSvg).toString('base64')}`;
+
   const [playfairFont, playfairFont900, unifrakturFont, imfellFont, girassolFont] = await Promise.all([
     loadGoogleFont('Playfair+Display:wght@700', displayText),
     loadGoogleFont('Playfair+Display:wght@900', displayText),
@@ -123,9 +129,10 @@ export async function GET(request: Request) {
             </div>
           </div>
 
-          {/* Headline */}
+          {/* Headline — gradient Bayer overlay spans full width, ramps up from THE → FAKES? */}
           <div
             style={{
+              position: 'relative',
               display: 'flex',
               justifyContent: 'space-between',
               width: '100%',
@@ -139,8 +146,15 @@ export async function GET(request: Request) {
             <span>CAN</span>
             <span>YOU</span>
             <span>SPOT</span>
-            <span>THE</span>
-            {/* FAKES? — databend: 4 bands with subtle horizontal shifts */}
+            {/* THE — databend at ~30% intensity */}
+            <span style={{ position: 'relative', display: 'flex' }}>
+              <span style={{ visibility: 'hidden' }}>THE</span>
+              <span style={{ position: 'absolute', top: 0, left: -1, clipPath: 'polygon(0% 0%,100% 0%,100% 25%,0% 25%)' }}>THE</span>
+              <span style={{ position: 'absolute', top: 0, left: 1,  clipPath: 'polygon(0% 26%,100% 26%,100% 52%,0% 52%)' }}>THE</span>
+              <span style={{ position: 'absolute', top: 0, left: -2, clipPath: 'polygon(0% 53%,100% 53%,100% 76%,0% 76%)' }}>THE</span>
+              <span style={{ position: 'absolute', top: 0, left: 1,  clipPath: 'polygon(0% 77%,100% 77%,100% 100%,0% 100%)' }}>THE</span>
+            </span>
+            {/* FAKES? — databend at full intensity */}
             <span style={{ position: 'relative', display: 'flex' }}>
               <span style={{ visibility: 'hidden' }}>FAKES?</span>
               <span style={{ position: 'absolute', top: 0, left: -3, clipPath: 'polygon(0% 0%,100% 0%,100% 25%,0% 25%)' }}>FAKES?</span>
@@ -148,6 +162,8 @@ export async function GET(request: Request) {
               <span style={{ position: 'absolute', top: 0, left: -5, clipPath: 'polygon(0% 53%,100% 53%,100% 76%,0% 76%)' }}>FAKES?</span>
               <span style={{ position: 'absolute', top: 0, left: 3,  clipPath: 'polygon(0% 77%,100% 77%,100% 100%,0% 100%)' }}>FAKES?</span>
             </span>
+            {/* Gradient Bayer overlay — absolute, covers full headline width */}
+            <img src={bayerUrl} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }} />
           </div>
 
           {/* Double rule + subheadline */}
@@ -174,21 +190,21 @@ export async function GET(request: Request) {
             <div
               style={{
                 width: '28%',
-                paddingRight: '15px',
+                paddingRight: '14px',
                 borderRight: '1px solid #2a1a08',
                 display: 'flex',
                 flexDirection: 'column',
                 overflow: 'hidden',
               }}
             >
-              <div style={{ fontSize: '9px', letterSpacing: '2px', marginBottom: '5px', opacity: 0.55 }}>
+              <div style={{ fontSize: '8px', letterSpacing: '2px', marginBottom: '5px', opacity: 0.55 }}>
                 VOICE FROM THE ARCHIVES
               </div>
               <div
                 style={{
                   fontFamily: '"Playfair Display", serif',
                   fontWeight: 700,
-                  fontSize: '15px',
+                  fontSize: '14px',
                   lineHeight: 1.25,
                   marginBottom: '6px',
                   paddingBottom: '5px',
@@ -197,12 +213,8 @@ export async function GET(request: Request) {
               >
                 Can You Hear the Presses Roll?
               </div>
-              <div style={{ fontSize: '12px', lineHeight: 1.55, fontFamily: '"IM Fell English", serif' }}>
+              <div style={{ fontSize: '11px', lineHeight: 1.55, fontFamily: '"IM Fell English", serif' }}>
                 The citizen who takes up this journal will find within its pages a curious amusement devised to test the wits of even the most discerning reader. Our editors have gathered genuine clippings from the previous century and set them alongside fabrications of considerable craft. The reader is invited to distinguish truth from invention, and is warned the task is rather more difficult than it may at first appear.
-                For those eager to test their discernment,
-                no less than a challenge awaits within each clipping.
-                Seek the truth, but beware! Deceit wears a cunning guise.
-                Only the keenest minds will triumph in this paper trial.
               </div>
             </div>
 
