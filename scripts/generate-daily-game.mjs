@@ -262,6 +262,16 @@ function logStep(message) {
   console.log(`[${stamp}] ${message}`);
 }
 
+function isBlobNotFoundError(err) {
+  const name = err && typeof err === "object" ? String(err.name || "") : "";
+  const message = err instanceof Error ? err.message : String(err || "");
+  return (
+    /BlobNotFoundError/i.test(name) ||
+    /not found/i.test(message) ||
+    /does not exist/i.test(message)
+  );
+}
+
 function estimateCostUsd(inputTokens, outputTokens, priceIn, priceOut) {
   const inputCost = (inputTokens / 1_000_000) * priceIn;
   const outputCost = (outputTokens / 1_000_000) * priceOut;
@@ -701,8 +711,7 @@ async function main() {
       logStep("Play flag found (no plays since last generation). Skipping generation.");
       process.exit(0);
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      if (!/not found/i.test(message)) throw err;
+      if (!isBlobNotFoundError(err)) throw err;
       logStep("Play flag missing (someone played). Proceeding with generation.");
     }
   } else if (FORCE_GENERATE) {
