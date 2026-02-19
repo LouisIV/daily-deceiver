@@ -15,6 +15,8 @@ const PRICE_PER_MTOK_OUT_SCORE = 15;
 const BLOB_READ_WRITE_TOKEN = process.env.BLOB_READ_WRITE_TOKEN;
 const LOCAL_MODE = process.argv.includes("--local") || !BLOB_READ_WRITE_TOKEN;
 const SKIP_LOC = process.argv.includes("--skip-loc");
+const FORCE_GENERATE = process.argv.includes("--force");
+const PLAY_FLAG_PATH = "play-flag.txt";
 
 if (!ANTHROPIC_API_KEY) {
   console.error("Missing ANTHROPIC_API_KEY");
@@ -691,6 +693,22 @@ async function main() {
   logStep(`Generating daily game (${LOCAL_MODE ? "local" : "blob"} mode)…`);
   logStep(`Using Anthropic model (gen): ${ANTHROPIC_MODEL_GEN}`);
   logStep(`Using Anthropic model (score): ${ANTHROPIC_MODEL_SCORE}`);
+
+  if (!LOCAL_MODE && !FORCE_GENERATE) {
+    const { head } = await import("@vercel/blob");
+    try {
+      await head(PLAY_FLAG_PATH, { token: BLOB_READ_WRITE_TOKEN });
+      logStep("Play flag found. Proceeding with generation.");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (!/not found/i.test(message)) throw err;
+      logStep("No play flag found. Skipping generation.");
+      process.exit(0);
+    }
+  } else if (FORCE_GENERATE) {
+    logStep("Force mode enabled (--force). Ignoring play flag.");
+  }
+
   let runGenIn = 0;
   let runGenOut = 0;
   let runScoreIn = 0;
@@ -777,14 +795,23 @@ async function main() {
     writeFileSync(outPath, payload, "utf8");
     console.log(`Done! Written to ${outPath}`);
   } else {
-    const { put } = await import("@vercel/blob");
+    const { del, put } = await import("@vercel/blob");
     const blob = await put("daily-game.json", payload, {
       access: "public",
       addRandomSuffix: false,
+      allowOverwrite: true,
       contentType: "application/json",
       cacheControlMaxAge: 3600,
       token: BLOB_READ_WRITE_TOKEN,
     });
+    try {
+      await del(PLAY_FLAG_PATH, { token: BLOB_READ_WRITE_TOKEN });
+      logStep("Cleared play flag after successful generation.");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (!/not found/i.test(message)) throw err;
+      logStep("Play flag was already absent after generation.");
+    }
     console.log(`Done! Blob URL: ${blob.url}`);
   }
 }

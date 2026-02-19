@@ -21,6 +21,7 @@ export default function App() {
   const [answered, setAnswered] = useState<Answered>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const initRan = useRef(false);
+  const playMarked = useRef(false);
 
   const loadGame = useCallback(async (): Promise<void> => {
     setPhase("loading");
@@ -58,15 +59,27 @@ export default function App() {
 
   const snippet = rounds[current];
 
+  const markPlayed = useCallback(() => {
+    if (playMarked.current) return;
+    playMarked.current = true;
+    void fetch("/api/plays", {
+      method: "POST",
+      keepalive: true,
+    }).catch(() => {
+      playMarked.current = false;
+    });
+  }, []);
+
   const guess = useCallback(
     (isReal: boolean) => {
       if (answered || !snippet) return;
+      markPlayed();
       const ok = isReal === snippet.real;
       setAnswered(ok ? "correct" : "wrong");
       if (ok) setScore((s) => s + 1);
       setHistory((h) => [...h, { snippet, guessReal: isReal, correct: ok }]);
     },
-    [answered, snippet]
+    [answered, markPlayed, snippet]
   );
 
   const next = useCallback(() => {

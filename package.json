@@ -8,6 +8,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@vercel/blob": "^2.2.0",
     "@vercel/og": "^0.8.6",
     "next": "^14.2.5",
     "react": "^18.2.0",
