@@ -4,6 +4,7 @@ import type { Answered, Round } from "@/lib/game/types";
 import { Clipping } from "./Clipping";
 import { NewsButton } from "./NewsButton";
 import { StampButton } from "./StampButton";
+import { PaperTexture } from "@/lib/paper-texture";
 
 export function PlayScreen({
   snippet,
@@ -49,7 +50,9 @@ export function PlayScreen({
         ))}
       </div>
 
-      <Clipping snippet={snippet} layout={snippet.layout} index={current} />
+      <PaperTexture opacity={0.18} intensity={2}>
+        <Clipping snippet={snippet} layout={snippet.layout} index={current} />
+      </PaperTexture>
 
       {answered && (
         <div
