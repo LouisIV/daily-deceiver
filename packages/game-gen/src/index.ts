@@ -1,8 +1,7 @@
 import {
-  ANTHROPIC_API_KEY,
   AI_GATEWAY_API_KEY,
-  ANTHROPIC_MODEL_GEN,
-  ANTHROPIC_MODEL_SCORE,
+  FAKE_GENERATION_MODEL,
+  SCORE_MODEL,
   FORCE_GENERATE,
   LOCAL_MODE,
   MIN_SCORE,
@@ -13,18 +12,13 @@ import {
   TARGET_TOTAL,
 } from "./config.js";
 import { fetchRealSnippets } from "./loc.js";
-import { generateFakeSnippets, scoreSnippetsWithClaude } from "./anthropic.js";
+import { generateFakeSnippets, scoreSnippets } from "./fakes-generation.js";
 import { buildPayload, shouldGenerateFromBlobFlag, writePayload } from "./storage.js";
 import type { Snippet } from "./types.js";
 import { heuristicRejectSnippet, logStep } from "./utils.js";
 
-if (!ANTHROPIC_API_KEY) {
-  console.error("Missing ANTHROPIC_API_KEY");
-  process.exit(1);
-}
-
-if (!AI_GATEWAY_API_KEY && !SKIP_LOC) {
-  console.error("Missing AI_GATEWAY_API_KEY (or VERCEL_OIDC_TOKEN) for OCR");
+if (!AI_GATEWAY_API_KEY) {
+  console.error("Missing AI_GATEWAY_API_KEY (or VERCEL_OIDC_TOKEN)");
   process.exit(1);
 }
 
@@ -34,8 +28,8 @@ if (LOCAL_MODE && !process.env.BLOB_READ_WRITE_TOKEN) {
 
 async function main() {
   logStep(`Generating daily game (${LOCAL_MODE ? "local" : "blob"} mode)…`);
-  logStep(`Using Anthropic model (gen): ${ANTHROPIC_MODEL_GEN}`);
-  logStep(`Using Anthropic model (score): ${ANTHROPIC_MODEL_SCORE}`);
+  logStep(`Using fake generation model: ${FAKE_GENERATION_MODEL}`);
+  logStep(`Using score model: ${SCORE_MODEL}`);
 
   if (!LOCAL_MODE && !FORCE_GENERATE) {
     const shouldGenerate = await shouldGenerateFromBlobFlag();
@@ -66,7 +60,7 @@ async function main() {
   const fakesFiltered = fakeResult.snippets.filter((s) => !heuristicRejectSnippet(s));
   logStep(`Got ${fakesFiltered.length} fake snippets after heuristic filter`);
 
-  const scoreResult = await scoreSnippetsWithClaude([...realsFiltered, ...fakesFiltered], "total");
+  const scoreResult = await scoreSnippets([...realsFiltered, ...fakesFiltered], "total");
   runScoreIn += scoreResult.usage.input_tokens || 0;
   runScoreOut += scoreResult.usage.output_tokens || 0;
   const scores = scoreResult.scores as Array<{ id: number; score: number }>;

@@ -1,6 +1,6 @@
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
-const ANTHROPIC_MODEL_GEN = process.env.ANTHROPIC_MODEL_GEN || "claude-haiku-4-5";
-const ANTHROPIC_MODEL_SCORE = process.env.ANTHROPIC_MODEL_SCORE || "claude-sonnet-4-6";
+const FAKE_GENERATION_MODEL = process.env.FAKE_GENERATION_MODEL || "anthropic/claude-haiku-4-5-20251001";
+const SCORE_MODEL = process.env.SCORE_MODEL || "anthropic/claude-sonnet-4-6";
 const PRICE_PER_MTOK_IN_GEN = 1;
 const PRICE_PER_MTOK_OUT_GEN = 5;
 const PRICE_PER_MTOK_IN_SCORE = 3;
@@ -124,8 +124,8 @@ const LOC_REQUEST_DELAY_MS = 350;
 
 export {
   ANTHROPIC_API_KEY,
-  ANTHROPIC_MODEL_GEN,
-  ANTHROPIC_MODEL_SCORE,
+  FAKE_GENERATION_MODEL,
+  SCORE_MODEL,
   PRICE_PER_MTOK_IN_GEN,
   PRICE_PER_MTOK_OUT_GEN,
   PRICE_PER_MTOK_IN_SCORE,

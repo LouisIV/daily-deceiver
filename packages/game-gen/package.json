@@ -4,11 +4,15 @@
   "type": "module",
   "scripts": {
     "generate": "tsx src/generate-daily-game.ts",
-    "test": "node --import tsx/esm --test src/loc.test.ts", 
+    "test": "node --import tsx/esm --test src/loc.test.ts",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@vercel/blob": "^2.2.0"
+    "@ai-sdk/anthropic": "^3.0.46",
+    "@ai-sdk/openai": "^3.0.30",
+    "@vercel/blob": "^2.2.0",
+    "ai": "^6.0.94",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "^20.12.12",
