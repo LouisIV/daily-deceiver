@@ -1,6 +1,7 @@
 export type Snippet = {
   headline: string;
   text: string;
+  subheading?: string;
   source?: string;
   url?: string;
   pageUrl?: string;
