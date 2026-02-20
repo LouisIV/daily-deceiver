@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=IM+Fell+English:ital@0;1&family=UnifrakturMaguntia&family=Playfair+Display+SC:wght@400;700&display=swap');
-
 :root {
   --ink: #1c1008;
   --paper: #f5ecd7;
@@ -21,7 +19,7 @@ body {
 }
 
 .masthead-title {
-  font-family: 'UnifrakturMaguntia', cursive;
+  font-family: var(--font-unifraktur), cursive;
   font-size: clamp(36px, 8vw, 80px);
   color: var(--ink);
   line-height: 1;
@@ -29,7 +27,7 @@ body {
 }
 
 .clipping-body {
-  font-family: 'IM Fell English', Georgia, serif;
+  font-family: var(--font-im-fell), Georgia, serif;
   font-size: clamp(13px, 2vw, 16px);
   line-height: 1.75;
   color: var(--ink);
@@ -38,7 +36,7 @@ body {
 }
 
 .drop-cap::first-letter {
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: var(--font-playfair), Georgia, serif;
   font-size: 3.8em;
   font-weight: 900;
   float: left;
@@ -49,7 +47,7 @@ body {
 }
 
 .headline {
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: var(--font-playfair), Georgia, serif;
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -58,7 +56,7 @@ body {
 }
 
 .subhead {
-  font-family: 'Playfair Display SC', Georgia, serif;
+  font-family: var(--font-playfair-sc), Georgia, serif;
   font-size: 11px;
   letter-spacing: 3px;
   text-transform: uppercase;
@@ -67,7 +65,7 @@ body {
 }
 
 .ornament {
-  font-family: 'IM Fell English', Georgia, serif;
+  font-family: var(--font-im-fell), Georgia, serif;
   color: var(--ink);
   opacity: 0.4;
 }
