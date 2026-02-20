@@ -5,7 +5,7 @@ import type { Answered, Round } from "@/lib/game/types";
 import { Clipping } from "./Clipping";
 import { NewsButton } from "./NewsButton";
 import { StampButton } from "./StampButton";
-import { PaperTexture } from "@/lib/paper-texture";
+import { PaperTexture } from "@/lib/paper-texture-client";
 import { getLocSourceLink } from "@/lib/game/source-link";
 import { PaperPreview } from "./PaperPreview";
 
@@ -56,7 +56,12 @@ export function PlayScreen({
         ))}
       </div>
 
-      <PaperTexture opacity={0.18} intensity={2}>
+      <PaperTexture
+        opacity={0.18}
+        intensity={2}
+        opacityIOS={0.3}
+        intensityIOS={3}
+      >
         <Clipping snippet={snippet} layout={snippet.layout} index={current} />
       </PaperTexture>
 

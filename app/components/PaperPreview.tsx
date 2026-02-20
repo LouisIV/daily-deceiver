@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import posthog from "posthog-js";
 import type { Snippet } from "@/lib/game/types";
-import { PaperTexture } from "@/lib/paper-texture";
+import { PaperTexture } from "@/lib/paper-texture-client";
 import { getLocSourceLink, getLocSourceMedia } from "@/lib/game/source-link";
 
 const DefaultPostIt = (
@@ -156,6 +156,8 @@ export function PaperPreview({
         <PaperTexture
           opacity={0.22}
           intensity={1.1}
+          opacityIOS={0.35}
+          intensityIOS={2.2}
           style={{ background: "var(--paper)" }}
         >
           <img
@@ -200,6 +202,8 @@ export function PaperPreview({
         <PaperTexture
           opacity={0.22}
           intensity={1.1}
+          opacityIOS={0.35}
+          intensityIOS={2.2}
           style={{ background: "var(--paper)" }}
         >
           <span className="paper-image-button-text">
