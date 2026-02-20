@@ -3,6 +3,9 @@ export type Snippet = {
   text: string;
   source?: string;
   url?: string;
+  pageUrl?: string;
+  pdfUrl?: string;
+  imageUrl?: string;
   real: boolean;
 };
 
