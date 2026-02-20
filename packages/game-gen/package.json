@@ -1,0 +1,22 @@
+{
+  "name": "@newspaper-game/game-gen",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate": "tsx src/generate-daily-game.ts",
+    "test": "node --import tsx/esm --test src/loc.test.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.46",
+    "@ai-sdk/openai": "^3.0.30",
+    "@vercel/blob": "^2.2.0",
+    "ai": "^6.0.94",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.12",
+    "tsx": "^4.20.2",
+    "typescript": "^5.5.4"
+  }
+}
