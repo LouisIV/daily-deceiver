@@ -2,6 +2,7 @@
 
 import type { HistoryItem } from "@/lib/game/types";
 import { StampButton } from "./StampButton";
+import { getLocSourceLink } from "@/lib/game/source-link";
 
 export function ResultScreen({
   score,
@@ -66,45 +67,69 @@ export function ResultScreen({
           Your Record
         </div>
         <hr className="rule-thick" style={{ marginBottom: 10 }} />
-        {history.map((h, i) => (
-          <div
-            key={i}
-            style={{
-              display: "flex",
-              gap: 10,
-              padding: "8px 0",
-              borderBottom: "1px solid var(--aged)",
-              alignItems: "flex-start",
-            }}
-          >
-            <span
+        {history.map((h, i) => {
+          const sourceLink = getLocSourceLink(h.snippet);
+          const sourceLabel = h.snippet.source || "Library of Congress";
+          return (
+            <div
+              key={i}
               style={{
-                fontFamily: "'Playfair Display',serif",
-                fontWeight: 900,
-                fontSize: 16,
-                flexShrink: 0,
-                color: h.correct ? "var(--green)" : "var(--red)",
+                display: "flex",
+                gap: 10,
+                padding: "8px 0",
+                borderBottom: "1px solid var(--aged)",
+                alignItems: "flex-start",
               }}
             >
-              {h.correct ? "✓" : "✗"}
-            </span>
-            <div style={{ flex: 1 }}>
-              <div className="headline" style={{ fontSize: 11, marginBottom: 2, opacity: 0.8 }}>
-                {h.snippet.headline}
-              </div>
-              <div
-                className="clipping-body"
-                style={{ fontSize: 11, opacity: 0.65, lineHeight: 1.4 }}
+              <span
+                style={{
+                  fontFamily: "'Playfair Display',serif",
+                  fontWeight: 900,
+                  fontSize: 16,
+                  flexShrink: 0,
+                  color: h.correct ? "var(--green)" : "var(--red)",
+                }}
               >
-                {h.snippet.text.slice(0, 100)}…
-              </div>
-              <div className="subhead" style={{ fontSize: 9, marginTop: 3 }}>
-                {h.snippet.real ? `Real · ${h.snippet.source}` : "AI-Generated Fake"} · You guessed:{" "}
-                {h.guessReal ? "Real" : "Fake"}
+                {h.correct ? "✓" : "✗"}
+              </span>
+              <div style={{ flex: 1 }}>
+                <div className="headline" style={{ fontSize: 11, marginBottom: 2, opacity: 0.8 }}>
+                  {h.snippet.headline}
+                </div>
+                <div
+                  className="clipping-body"
+                  style={{ fontSize: 11, opacity: 0.65, lineHeight: 1.4 }}
+                >
+                  {h.snippet.text.slice(0, 100)}…
+                </div>
+                <div className="subhead" style={{ fontSize: 9, marginTop: 3 }}>
+                  {h.snippet.real ? (
+                    <>
+                      Real · {sourceLabel}
+                      {sourceLink ? (
+                        <>
+                          {" · "}
+                          <a
+                            href={sourceLink.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ color: "inherit", textDecoration: "underline" }}
+                          >
+                            {sourceLink.label}
+                          </a>
+                        </>
+                      ) : null}
+                    </>
+                  ) : (
+                    "AI-Generated Fake"
+                  )}{" "}
+                  · You guessed:{" "}
+                  {h.guessReal ? "Real" : "Fake"}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div style={{ textAlign: "center" }}>

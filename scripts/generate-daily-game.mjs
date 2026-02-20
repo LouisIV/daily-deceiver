@@ -355,6 +355,59 @@ function findPdfUrl(resourceData) {
   return pdf || null;
 }
 
+function findImageUrl(resourceData, pdfUrl) {
+  if (!resourceData || typeof resourceData !== "object") return null;
+  const candidates = [];
+
+  const pushCandidate = (value) => {
+    if (typeof value === "string") candidates.push(value);
+  };
+
+  const collectFrom = (obj) => {
+    if (!obj || typeof obj !== "object") return;
+    pushCandidate(obj.url);
+    pushCandidate(obj.file);
+    pushCandidate(obj.image);
+    pushCandidate(obj.image_url);
+    pushCandidate(obj.iiif_url);
+  };
+
+  if (Array.isArray(resourceData.resources)) {
+    for (const res of resourceData.resources) {
+      if (typeof res === "string") pushCandidate(res);
+      else collectFrom(res);
+    }
+  }
+  if (Array.isArray(resourceData.item?.resources)) {
+    for (const res of resourceData.item.resources) {
+      if (typeof res === "string") pushCandidate(res);
+      else collectFrom(res);
+    }
+  }
+  if (Array.isArray(resourceData.page)) {
+    for (const page of resourceData.page) {
+      if (page && typeof page.url === "string") pushCandidate(page.url);
+      collectFrom(page);
+    }
+  }
+
+  if (typeof pdfUrl === "string" && pdfUrl.includes(".pdf")) {
+    candidates.push(
+      pdfUrl.replace(/\.pdf(\?|#|$)/i, ".jpg$1"),
+      pdfUrl.replace(/\.pdf(\?|#|$)/i, ".jpeg$1"),
+      pdfUrl.replace(/\.pdf(\?|#|$)/i, ".png$1")
+    );
+  }
+
+  const image = candidates.find(
+    (url) =>
+      typeof url === "string" &&
+      (/(\.jpg|\.jpeg|\.png|\.gif|\.webp|\.tif|\.tiff)(\?|#|$)/i.test(url) ||
+        url.includes("/iiif/"))
+  );
+  return image || null;
+}
+
 function buildSearchQueries(target = 10) {
   const queries = new Set();
   const topics = [...TOPIC_TERMS].sort(() => Math.random() - 0.5);
@@ -450,6 +503,7 @@ async function fetchRealSnippets(count = 5) {
         const resourceData = await fetchJsonWithRetry(resourceJsonUrl);
         let raw = extractFullText(resourceData);
         const pdfUrl = findPdfUrl(resourceData);
+        const imageUrl = findImageUrl(resourceData, pdfUrl);
 
         if (!raw && Array.isArray(resourceData.page)) {
           const textUrl =
@@ -486,6 +540,7 @@ async function fetchRealSnippets(count = 5) {
           headline,
           text: excerpt,
           pdfUrl: pdfUrl || undefined,
+          imageUrl: imageUrl || undefined,
           pageUrl: pageUrl || undefined,
           source:
             [sourceTitle, sourceDate].filter(Boolean).join(", ") ||
