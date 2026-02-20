@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import dynamic from "next/dynamic";
 import posthog from "posthog-js";
 import type { Answered, Round } from "@/lib/game/types";
 import { Clipping } from "./Clipping";
@@ -8,6 +10,11 @@ import { StampButton } from "./StampButton";
 import { PaperTexture } from "@/lib/paper-texture-client";
 import { getLocSourceLink } from "@/lib/game/source-link";
 import { PaperPreview } from "./PaperPreview";
+
+const ReportIssueModal = dynamic(
+  () => import("./ReportIssueModal").then((m) => ({ default: m.ReportIssueModal })),
+  { ssr: false }
+);
 
 export function PlayScreen({
   snippet,
@@ -26,6 +33,7 @@ export function PlayScreen({
 }) {
   const sourceLink = getLocSourceLink(snippet);
   const sourceLabel = snippet.source || "Library of Congress";
+  const [reportModalOpen, setReportModalOpen] = useState(false);
 
   return (
     <div style={{ animation: "fadeUp 0.4s ease" }}>
@@ -141,9 +149,37 @@ export function PlayScreen({
           </div>
 
           {snippet.real && (
-            <PaperPreview snippet={snippet} questionNumber={current + 1} />
+            <>
+              <PaperPreview snippet={snippet} questionNumber={current + 1} />
+              <div style={{ textAlign: "center", marginTop: 12 }}>
+                <button
+                  type="button"
+                  onClick={() => setReportModalOpen(true)}
+                  style={{
+                    fontFamily: "'Special Elite',serif",
+                    fontSize: 12,
+                    background: "none",
+                    border: "none",
+                    color: "var(--ink)",
+                    opacity: 0.7,
+                    textDecoration: "underline",
+                    cursor: "pointer",
+                  }}
+                >
+                  Report issue with this clipping
+                </button>
+              </div>
+            </>
           )}
         </div>
+      )}
+
+      {reportModalOpen && snippet.real && (
+        <ReportIssueModal
+          snippet={snippet}
+          questionNumber={current + 1}
+          onClose={() => setReportModalOpen(false)}
+        />
       )}
 
       {!answered ? (
