@@ -57,17 +57,17 @@ function findImageUrl(resourceData: any, pdfUrl: string | null): string | null {
   if (!resourceData || typeof resourceData !== "object") return null;
   const candidates = collectResourceCandidates(resourceData);
 
-  // 1. Direct JPEG — best for Gemini OCR, no transformation needed
-  const jpeg = candidates.find((url) => /(\.jpg|\.jpeg)(\?|#|$)/i.test(url));
-  if (jpeg) return jpeg;
-
-  // 2. IIIF service URL — form a proper JPEG image request at 25% scale
+  // 1. IIIF service URL — preferred because we control the scale (25%), keeping token costs consistent
   const iiif = candidates.find((url) => url.includes("/iiif/"));
   if (iiif) return iiifToJpeg(iiif);
 
-  // 3. JPEG 2000 (.jp2) from Chronicling America — a .jpg sibling always exists
+  // 2. JPEG 2000 (.jp2) from Chronicling America — a .jpg sibling always exists
   const jp2 = candidates.find((url) => /\.jp2(\?|#|$)/i.test(url));
   if (jp2) return jp2.replace(/\.jp2(\?|#|$)/i, ".jpg$1");
+
+  // 3. Direct JPEG — size unknown, but better than nothing
+  const jpeg = candidates.find((url) => /(\.jpg|\.jpeg)(\?|#|$)/i.test(url));
+  if (jpeg) return jpeg;
 
   // 4. PDF-adjacent JPEG (last-resort derivation from the PDF URL)
   if (typeof pdfUrl === "string" && pdfUrl.includes(".pdf")) {

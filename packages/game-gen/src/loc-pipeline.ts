@@ -177,6 +177,10 @@ class LocPipeline {
 
   // Stage 4: turn raw clippings into deduplicated Snippets and accumulate
   private collectSnippets(resource: LocResource, clippings: OcrClipping[]): void {
+    if (!clippings.length) {
+      logStep("  No clippings returned by OCR");
+      return;
+    }
     for (const clipping of clippings) {
       if (this.done) break;
 
@@ -185,7 +189,10 @@ class LocPipeline {
         clipping?.["sub-heading"] || clipping?.subheading || clipping?.subHeading || ""
       );
       const excerpt = excerptFromClipping(subHeading ? `${subHeading} — ${body}` : body);
-      if (!excerpt) continue;
+      if (!excerpt) {
+        logStep(`  Skipping clipping "${clipping?.headline}" — body too short (${body.split(" ").length} words)`);
+        continue;
+      }
 
       const headline =
         [clipping?.headline]
@@ -194,7 +201,10 @@ class LocPipeline {
         ?? deriveHeadlineFromText(excerpt);
 
       const dedupeKey = `${normalizeTitle(resource.item.title || resource.item.heading)}::${excerpt.slice(0, 90)}`;
-      if (this.seen.has(dedupeKey)) continue;
+      if (this.seen.has(dedupeKey)) {
+        logStep(`  Skipping clipping "${headline}" — duplicate`);
+        continue;
+      }
       this.seen.add(dedupeKey);
 
       this.snippets.push({

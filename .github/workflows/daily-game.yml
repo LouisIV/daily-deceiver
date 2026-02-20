@@ -12,9 +12,11 @@ jobs:
         with:
           node-version: '20'
       - run: npm install
-        working-directory: scripts
-      - run: node generate-daily-game.mjs
-        working-directory: scripts
+        working-directory: packages/game-gen
+      - run: npm run typecheck
+        working-directory: packages/game-gen
+      - run: npm run generate
+        working-directory: packages/game-gen
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}

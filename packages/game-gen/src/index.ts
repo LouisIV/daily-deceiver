@@ -1,19 +1,21 @@
 import {
   AI_GATEWAY_API_KEY,
   FAKE_GENERATION_MODEL,
+  GEMINI_OCR_MODEL,
   SCORE_MODEL,
   FORCE_GENERATE,
   LOCAL_MODE,
   MIN_SCORE,
   OVERFETCH_FAKE,
   OVERFETCH_REAL,
+  REAL_SCORE_SAMPLE,
   SKIP_LOC,
   TARGET_REAL,
   TARGET_TOTAL,
 } from "./config.js";
 import { fetchRealSnippets } from "./loc.js";
 import { generateFakeSnippets, scoreSnippets } from "./fakes-generation.js";
-import { buildPayload, shouldGenerateFromBlobFlag, writePayload } from "./storage.js";
+import { buildPayload, shouldGenerateFromBlobFlag, writePayload, writeReport } from "./storage.js";
 import type { Snippet } from "./types.js";
 import { heuristicRejectSnippet, logStep } from "./utils.js";
 
@@ -43,22 +45,52 @@ async function main() {
   let runScoreIn = 0;
   let runScoreOut = 0;
 
+  const report: Record<string, unknown> = {
+    generatedAt: new Date().toISOString(),
+    date: new Date().toISOString().slice(0, 10),
+    mode: LOCAL_MODE ? "local" : "blob",
+    models: { ocr: GEMINI_OCR_MODEL, fakeGeneration: FAKE_GENERATION_MODEL, scoring: SCORE_MODEL },
+  };
+
   let realsFiltered: Snippet[] = [];
   if (SKIP_LOC) {
     logStep("Skipping LOC fetch (--skip-loc)");
   } else {
     logStep("Fetching real snippets from Chronicling America…");
     const realsRaw = await fetchRealSnippets(OVERFETCH_REAL);
-    realsFiltered = realsRaw.filter((s) => !heuristicRejectSnippet(s));
+    const realRejections: Record<string, number> = {};
+    realsFiltered = realsRaw.filter((s) => {
+      const reason = heuristicRejectSnippet(s);
+      if (reason) {
+        realRejections[reason] = (realRejections[reason] ?? 0) + 1;
+        return false;
+      }
+      return true;
+    });
+    if (Object.keys(realRejections).length) {
+      logStep(`Heuristic rejections: ${JSON.stringify(realRejections)}`);
+    }
     logStep(`Got ${realsFiltered.length} real snippets after heuristic filter`);
+    realsFiltered = realsFiltered.sort(() => Math.random() - 0.5).slice(0, REAL_SCORE_SAMPLE);
+    logStep(`Randomly sampled ${realsFiltered.length} reals for scoring`);
+    report.reals = { fetched: realsRaw.length, rejections: realRejections, passedHeuristic: realsFiltered.length };
   }
 
   logStep(`Generating ${OVERFETCH_FAKE} fake snippets…`);
   const fakeResult = await generateFakeSnippets(OVERFETCH_FAKE);
   runGenIn += fakeResult.usage.input_tokens || 0;
   runGenOut += fakeResult.usage.output_tokens || 0;
-  const fakesFiltered = fakeResult.snippets.filter((s) => !heuristicRejectSnippet(s));
+  const fakeRejections: Record<string, number> = {};
+  const fakesFiltered = fakeResult.snippets.filter((s) => {
+    const reason = heuristicRejectSnippet(s);
+    if (reason) {
+      fakeRejections[reason] = (fakeRejections[reason] ?? 0) + 1;
+      return false;
+    }
+    return true;
+  });
   logStep(`Got ${fakesFiltered.length} fake snippets after heuristic filter`);
+  report.fakes = { generated: fakeResult.snippets.length, rejections: fakeRejections, passedHeuristic: fakesFiltered.length };
 
   const scoreResult = await scoreSnippets([...realsFiltered, ...fakesFiltered], "total");
   runScoreIn += scoreResult.usage.input_tokens || 0;
@@ -89,6 +121,15 @@ async function main() {
     throw new Error(`Not enough quality snippets: got ${snippets.length}`);
   }
 
+  report.scoring = {
+    realsAboveThreshold: scoredReals.length,
+    fakesAboveThreshold: scoredFakes.length,
+    selectedReals: selectedReals.length,
+    selectedFakes: selectedFakes.length,
+  };
+  report.tokenUsage = { genIn: runGenIn, genOut: runGenOut, scoreIn: runScoreIn, scoreOut: runScoreOut };
+  report.snippets = snippets;
+
   if (runGenIn || runGenOut || runScoreIn || runScoreOut) {
     logStep(
       `Anthropic run total: gen_in=${runGenIn} gen_out=${runGenOut} ` +
@@ -98,6 +139,7 @@ async function main() {
 
   const payload = buildPayload(snippets);
   await writePayload(payload);
+  writeReport(report);
 }
 
 main().catch((err) => {

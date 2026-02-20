@@ -56,4 +56,10 @@ function buildPayload(snippets: Snippet[]) {
   );
 }
 
-export { shouldGenerateFromBlobFlag, writePayload, buildPayload };
+function writeReport(report: Record<string, unknown>) {
+  const outPath = resolve(REPO_ROOT, "public", "generation-report.json");
+  writeFileSync(outPath, JSON.stringify(report, null, 2), "utf8");
+  logStep(`Report written to ${outPath}`);
+}
+
+export { shouldGenerateFromBlobFlag, writePayload, buildPayload, writeReport };

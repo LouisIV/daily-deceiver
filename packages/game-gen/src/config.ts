@@ -113,8 +113,9 @@ const EXTRA_TERMS = ["near", "in", "at", "outside", "yesterday", "last night", "
 
 const MIN_SNIPPET_WORDS = 40;
 const MAX_SNIPPET_WORDS = 120;
-const OVERFETCH_REAL = 30;
+const OVERFETCH_REAL = 40;
 const OVERFETCH_FAKE = 30;
+const REAL_SCORE_SAMPLE = 20;
 const MIN_SCORE = 6;
 const TARGET_REAL = 5;
 const TARGET_TOTAL = 10;
@@ -144,6 +145,7 @@ export {
   MAX_SNIPPET_WORDS,
   OVERFETCH_REAL,
   OVERFETCH_FAKE,
+  REAL_SCORE_SAMPLE,
   MIN_SCORE,
   TARGET_REAL,
   TARGET_TOTAL,
