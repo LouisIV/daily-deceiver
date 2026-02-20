@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import posthog from "posthog-js";
 import type { Answered, Round } from "@/lib/game/types";
 import { Clipping } from "./Clipping";
 import { NewsButton } from "./NewsButton";
@@ -122,6 +123,15 @@ export function PlayScreen({
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{ color: "inherit", textDecoration: "underline" }}
+                            onClick={() =>
+                              posthog.capture("source_link_clicked", {
+                                question_number: current + 1,
+                                headline: snippet.headline,
+                                source_label: sourceLink.label,
+                                source_href: sourceLink.href,
+                                link_type: "verdict_text",
+                              })
+                            }
                           >
                             {sourceLink.label}
                           </a>
@@ -151,6 +161,14 @@ export function PlayScreen({
                   color: "inherit",
                   textDecoration: "none",
                 }}
+                onClick={() =>
+                  posthog.capture("source_link_clicked", {
+                    question_number: current + 1,
+                    headline: snippet.headline,
+                    source_href: fallbackHref || previewHref,
+                    link_type: "image_preview",
+                  })
+                }
               >
                 <img
                   alt="Library of Congress clipping preview"
@@ -213,6 +231,14 @@ export function PlayScreen({
                       letterSpacing: 0.8,
                       background: "rgba(255,255,255,0.45)",
                     }}
+                    onClick={() =>
+                      posthog.capture("source_link_clicked", {
+                        question_number: current + 1,
+                        headline: snippet.headline,
+                        source_href: fallbackHref,
+                        link_type: "no_preview_fallback",
+                      })
+                    }
                   >
                     Open on Library of Congress
                   </a>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import posthog from "posthog-js";
 
 import { LoadScreen } from "./components/LoadScreen";
 import { Masthead } from "./components/Masthead";
@@ -35,19 +36,25 @@ export default function App() {
       if (!Array.isArray(daily.snippets) || daily.snippets.length < 6) {
         throw new Error("Invalid game data");
       }
-      setRounds(
-        shuffle(daily.snippets)
-          .slice(0, TOTAL)
-          .map((r, i) => ({ ...r, layout: getLayout(i) }))
-      );
+      const selected = shuffle(daily.snippets)
+        .slice(0, TOTAL)
+        .map((r, i) => ({ ...r, layout: getLayout(i) }));
+      setRounds(selected);
       setCurrent(0);
       setScore(0);
       setAnswered(null);
       setHistory([]);
       setPhase("playing");
+      posthog.capture("game_started", {
+        total_questions: selected.length,
+        game_url: url,
+      });
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
       setError(message);
+      posthog.capture("game_load_failed", {
+        error_message: message,
+      });
     }
   }, []);
 
@@ -62,9 +69,11 @@ export default function App() {
   const markPlayed = useCallback(() => {
     if (playMarked.current) return;
     playMarked.current = true;
+    const distinctId = posthog.get_distinct_id();
     void fetch("/api/plays", {
       method: "POST",
       keepalive: true,
+      headers: distinctId ? { "x-posthog-distinct-id": distinctId } : {},
     }).catch(() => {
       playMarked.current = false;
     });
@@ -78,17 +87,51 @@ export default function App() {
       setAnswered(ok ? "correct" : "wrong");
       if (ok) setScore((s) => s + 1);
       setHistory((h) => [...h, { snippet, guessReal: isReal, correct: ok }]);
+      posthog.capture("clipping_guessed", {
+        question_number: current + 1,
+        guess: isReal ? "real" : "fake",
+        correct: ok,
+        clipping_is_real: snippet.real,
+        headline: snippet.headline,
+      });
     },
-    [answered, markPlayed, snippet]
+    [answered, current, markPlayed, snippet]
   );
 
+  const grade = (s: number = score): [string, string] => {
+    if (s >= 9)
+      return [
+        "EDITOR-IN-CHIEF",
+        "You could smell the ink from a mile away.",
+      ];
+    if (s >= 7)
+      return [
+        "SEASONED CORRESPONDENT",
+        "A discerning reader of considerable merit.",
+      ];
+    if (s >= 5)
+      return ["CASUAL SUBSCRIBER", "You got your nickel's worth, at least."];
+    if (s >= 3)
+      return ["OCCASIONAL READER", "Perhaps stick to the weather column."];
+    return ["HOPELESSLY DECEIVED", "We suggest canceling your subscription."];
+  };
+
   const next = useCallback(() => {
-    if (current + 1 >= rounds.length) setPhase("over");
-    else {
+    if (current + 1 >= rounds.length) {
+      setPhase("over");
+      const [gradeTitle] = grade(score);
+      posthog.capture("game_completed", {
+        score,
+        total_questions: rounds.length,
+        grade: gradeTitle,
+        accuracy: rounds.length > 0 ? score / rounds.length : 0,
+      });
+    } else {
       setCurrent((c) => c + 1);
       setAnswered(null);
     }
-  }, [current, rounds.length]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current, rounds.length, score]);
 
   useEffect(() => {
     if (phase !== "playing") return;
@@ -104,24 +147,6 @@ export default function App() {
     window.addEventListener("keydown", fn);
     return () => window.removeEventListener("keydown", fn);
   }, [phase, answered, guess, next]);
-
-  const grade = (): [string, string] => {
-    if (score >= 9)
-      return [
-        "EDITOR-IN-CHIEF",
-        "You could smell the ink from a mile away.",
-      ];
-    if (score >= 7)
-      return [
-        "SEASONED CORRESPONDENT",
-        "A discerning reader of considerable merit.",
-      ];
-    if (score >= 5)
-      return ["CASUAL SUBSCRIBER", "You got your nickel's worth, at least."];
-    if (score >= 3)
-      return ["OCCASIONAL READER", "Perhaps stick to the weather column."];
-    return ["HOPELESSLY DECEIVED", "We suggest canceling your subscription."];
-  };
 
   return (
     <div className="paper-texture" style={{ minHeight: "100vh", background: "var(--paper)" }}>

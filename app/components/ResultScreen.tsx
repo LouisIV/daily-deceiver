@@ -1,5 +1,6 @@
 "use client";
 
+import posthog from "posthog-js";
 import type { HistoryItem } from "@/lib/game/types";
 import { StampButton } from "./StampButton";
 import { getLocSourceLink } from "@/lib/game/source-link";
@@ -17,6 +18,15 @@ export function ResultScreen({
   history: HistoryItem[];
   restart: () => void | Promise<void>;
 }) {
+  const handleRestart = () => {
+    posthog.capture("game_restarted", {
+      previous_score: score,
+      previous_total: total,
+      previous_grade: title,
+    });
+    void restart();
+  };
+
   return (
     <div style={{ animation: "fadeUp 0.5s ease" }}>
       <div
@@ -133,7 +143,7 @@ export function ResultScreen({
       </div>
 
       <div style={{ textAlign: "center" }}>
-        <StampButton onClick={restart} color="var(--ink)">
+        <StampButton onClick={handleRestart} color="var(--ink)">
           🗞 Print Another Edition
         </StampButton>
         <div
