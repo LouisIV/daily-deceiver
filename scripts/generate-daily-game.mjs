@@ -12,6 +12,9 @@ const PRICE_PER_MTOK_IN_GEN = 1;
 const PRICE_PER_MTOK_OUT_GEN = 5;
 const PRICE_PER_MTOK_IN_SCORE = 3;
 const PRICE_PER_MTOK_OUT_SCORE = 15;
+const AI_GATEWAY_API_KEY = process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN;
+const AI_GATEWAY_BASE_URL = process.env.AI_GATEWAY_BASE_URL || "https://ai-gateway.vercel.sh/v1";
+const GEMINI_OCR_MODEL = process.env.GEMINI_OCR_MODEL || "google/gemini-2.0-flash-lite";
 const BLOB_READ_WRITE_TOKEN = process.env.BLOB_READ_WRITE_TOKEN;
 const LOCAL_MODE = process.argv.includes("--local") || !BLOB_READ_WRITE_TOKEN;
 const SKIP_LOC = process.argv.includes("--skip-loc");
@@ -20,6 +23,11 @@ const PLAY_FLAG_PATH = "play-flag.txt";
 
 if (!ANTHROPIC_API_KEY) {
   console.error("Missing ANTHROPIC_API_KEY");
+  process.exit(1);
+}
+
+if (!AI_GATEWAY_API_KEY && !SKIP_LOC) {
+  console.error("Missing AI_GATEWAY_API_KEY (or VERCEL_OIDC_TOKEN) for OCR");
   process.exit(1);
 }
 
@@ -163,6 +171,16 @@ function excerptFromOcr(raw) {
   return w.slice(0, MAX_SNIPPET_WORDS).join(" ");
 }
 
+function excerptFromClipping(raw) {
+  const cleaned = String(raw || "")
+    .replace(/\s+/g, " ")
+    .trim();
+  const w = words(cleaned);
+  if (w.length < 20) return null;
+  if (w.length <= MAX_SNIPPET_WORDS) return w.join(" ");
+  return w.slice(0, MAX_SNIPPET_WORDS).join(" ");
+}
+
 function normalizeTitle(value) {
   const raw = Array.isArray(value) ? value.join(" ") : value || "";
   return String(raw).replace(/\s+/g, " ").trim();
@@ -218,6 +236,89 @@ function deriveHeadlineFromText(text) {
   }
 
   return normalized.split(" ").slice(0, 8).join(" ").toUpperCase();
+}
+
+function stripSchemaExtras(node) {
+  if (!node || typeof node !== "object") return node;
+  if (Array.isArray(node)) return node.map(stripSchemaExtras);
+  const cleaned = {};
+  for (const [key, value] of Object.entries(node)) {
+    if (key === "propertyOrdering") continue;
+    cleaned[key] = stripSchemaExtras(value);
+  }
+  return cleaned;
+}
+
+function loadOcrPrompt() {
+  return {
+    prompt:
+      "Extract the headlines and body of each story. Only return interesting or unique stories. Return 3-5 clippings. The body should be two to three lines from the main body of the article. If there is a sub-heading include it (usually capitalized). Return only text that appears in the document",
+    schema: stripSchemaExtras({
+      type: "object",
+      properties: {
+        clippings: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              headline: { type: "string" },
+              body: { type: "string" },
+              "sub-heading": { type: "string" },
+            },
+            required: ["headline", "body"],
+          },
+        },
+      },
+    }),
+  };
+}
+
+async function ocrWithGemini(imageUrl, promptConfig) {
+  const res = await fetch(`${AI_GATEWAY_BASE_URL}/chat/completions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${AI_GATEWAY_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: GEMINI_OCR_MODEL,
+      max_tokens: 1500,
+      messages: [
+        { role: "system", content: promptConfig.prompt },
+        {
+          role: "user",
+          content: [
+            { type: "text", text: "Extract text from this newspaper page image." },
+            { type: "image_url", image_url: { url: imageUrl, detail: "auto" } },
+          ],
+        },
+      ],
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "clippings",
+          schema: promptConfig.schema,
+        },
+      },
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`AI Gateway OCR error ${res.status}: ${await res.text()}`);
+  }
+
+  const data = await res.json();
+  const usage = data.usage || {};
+  if (usage.prompt_tokens || usage.completion_tokens) {
+    logStep(
+      `  Gemini OCR usage: in=${usage.prompt_tokens || 0} out=${usage.completion_tokens || 0}`
+    );
+  }
+
+  const text = data.choices?.[0]?.message?.content || "";
+  const parsed = JSON.parse(text);
+  const clippings = Array.isArray(parsed?.clippings) ? parsed.clippings : [];
+  return clippings;
 }
 
 function heuristicRejectSnippet(snippet) {
@@ -436,6 +537,7 @@ async function fetchRealSnippets(count = 5) {
   const snippets = [];
   const seen = new Set();
   const queries = buildSearchQueries(18);
+  const promptConfig = loadOcrPrompt();
 
   for (const query of queries) {
     if (snippets.length >= count) break;
@@ -501,53 +603,53 @@ async function fetchRealSnippets(count = 5) {
         await sleep(LOC_REQUEST_DELAY_MS);
         logStep("    LOC resource request…");
         const resourceData = await fetchJsonWithRetry(resourceJsonUrl);
-        let raw = extractFullText(resourceData);
         const pdfUrl = findPdfUrl(resourceData);
         const imageUrl = findImageUrl(resourceData, pdfUrl);
-
-        if (!raw && Array.isArray(resourceData.page)) {
-          const textUrl =
-            resourceData.page.map((p) => p?.url).find((u) => typeof u === "string" && u.endsWith(".txt")) ||
-            resourceData.page
-              .map((p) => p?.url)
-              .find((u) => typeof u === "string" && u.endsWith("ocr.txt")) ||
-            resourceData.page.map((p) => p?.url).find((u) => typeof u === "string" && u.endsWith(".xml"));
-
-          if (textUrl) {
-            await sleep(LOC_REQUEST_DELAY_MS);
-            logStep("    LOC OCR text request…");
-            const textRaw = await fetchTextWithRetry(textUrl);
-            raw = textUrl.endsWith(".xml") ? extractTextFromAltoXml(textRaw) : textRaw;
-          }
-        }
-
-        if (!raw) continue;
-        const excerpt = excerptFromOcr(raw);
-        if (!excerpt) continue;
-
-        const dedupeKey = `${normalizeTitle(item.title || item.heading)}::${excerpt.slice(0, 90)}`;
-        if (seen.has(dedupeKey)) continue;
-        seen.add(dedupeKey);
+        if (!imageUrl) continue;
 
         const sourceTitle = normalizeTitle(item.title || item.heading);
         const sourceDate = Array.isArray(item.dates) ? item.dates.join(" ") : item.date || item.dates;
 
-        const rawTitle = normalizeTitle(item.title || item.heading || item.newspaper_title);
-        const derivedHeadline = deriveHeadlineFromText(excerpt);
-        const headline = rawTitle && !isLameTitle(rawTitle) ? headlineFromItem(item, excerpt) : derivedHeadline;
+        await sleep(LOC_REQUEST_DELAY_MS);
+        logStep("    Gemini OCR request via AI Gateway…");
+        let clippings = [];
+        try {
+          clippings = await ocrWithGemini(imageUrl, promptConfig);
+        } catch {
+          continue;
+        }
 
-        snippets.push({
-          headline,
-          text: excerpt,
-          pdfUrl: pdfUrl || undefined,
-          imageUrl: imageUrl || undefined,
-          pageUrl: pageUrl || undefined,
-          source:
-            [sourceTitle, sourceDate].filter(Boolean).join(", ") ||
-            "Chronicling America (loc.gov) / Library of Congress",
-          real: true,
-        });
-        logStep(`  Added real snippet (${snippets.length}/${count})`);
+        for (const clipping of clippings) {
+          if (snippets.length >= count) break;
+          const body = normalizeTitle(clipping?.body || "");
+          const subHeading = normalizeTitle(
+            clipping?.["sub-heading"] || clipping?.subheading || clipping?.subHeading || ""
+          );
+          const combined = subHeading ? `${subHeading} — ${body}` : body;
+          const excerpt = excerptFromClipping(combined);
+          if (!excerpt) continue;
+
+          const headlineRaw = normalizeTitle(clipping?.headline || "");
+          const derivedHeadline = deriveHeadlineFromText(excerpt);
+          const headline = headlineRaw && !isLameTitle(headlineRaw) ? headlineRaw : derivedHeadline;
+
+          const dedupeKey = `${normalizeTitle(item.title || item.heading)}::${excerpt.slice(0, 90)}`;
+          if (seen.has(dedupeKey)) continue;
+          seen.add(dedupeKey);
+
+          snippets.push({
+            headline,
+            text: excerpt,
+            pdfUrl: pdfUrl || undefined,
+            imageUrl: imageUrl || undefined,
+            pageUrl: pageUrl || undefined,
+            source:
+              [sourceTitle, sourceDate].filter(Boolean).join(", ") ||
+              "Chronicling America (loc.gov) / Library of Congress",
+            real: true,
+          });
+          logStep(`  Added real snippet (${snippets.length}/${count})`);
+        }
       } catch {
         continue;
       }
