@@ -1,6 +1,33 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { IM_Fell_English, Playfair_Display, Playfair_Display_SC, UnifrakturMaguntia } from "next/font/google";
 import "./globals.css";
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["400", "700", "900"],
+  style: ["normal", "italic"],
+  variable: "--font-playfair",
+});
+
+const playfairSC = Playfair_Display_SC({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-playfair-sc",
+});
+
+const imFell = IM_Fell_English({
+  subsets: ["latin"],
+  weight: "400",
+  style: ["normal", "italic"],
+  variable: "--font-im-fell",
+});
+
+const unifraktur = UnifrakturMaguntia({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-unifraktur",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://newspaper-game.vercel.app'),
@@ -32,7 +59,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${playfair.variable} ${playfairSC.variable} ${imFell.variable} ${unifraktur.variable}`}>
       <body>{children}</body>
     </html>
   );

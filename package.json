@@ -9,17 +9,15 @@
   },
   "dependencies": {
     "@vercel/blob": "^2.2.0",
-    "@vercel/og": "^0.8.6",
-    "next": "^14.2.5",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "satori": "^0.19.2",
+    "next": "^16.1.6",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
     "sharp": "^0.34.5"
   },
   "devDependencies": {
     "@types/node": "^20.12.12",
-    "@types/react": "^18.2.79",
-    "@types/react-dom": "^18.2.25",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "typescript": "^5.5.4"
   },
   "packageManager": "pnpm@9.15.4+sha512.b2dc20e2fc72b3e18848459b37359a32064663e5627a51e4c74b2c29dd8e8e0491483c3abb40789cfd578bf362fb6ba8261b05f0387d76792ed6e23ea3b1b6a0"

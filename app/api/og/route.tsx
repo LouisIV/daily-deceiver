@@ -1,4 +1,4 @@
-import { ImageResponse } from '@vercel/og';
+import { ImageResponse } from 'next/og';
 import { paperTextureSvgString } from '../../../lib/paper-texture';
 
 export const runtime = 'nodejs';
