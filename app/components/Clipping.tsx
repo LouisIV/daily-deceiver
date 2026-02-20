@@ -185,8 +185,17 @@ export function Clipping({
       </div>
     );
 
+  const { border: _b, ...restCardStyle } = cardStyle;
   return (
-    <div style={{ ...cardStyle, borderLeft: "4px solid var(--ink)" }}>
+    <div
+      style={{
+        ...restCardStyle,
+        borderTop: "1px solid #c8b080",
+        borderRight: "1px solid #c8b080",
+        borderBottom: "1px solid #c8b080",
+        borderLeft: "4px solid var(--ink)",
+      }}
+    >
       {stain}
       <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
         <div style={{ flexShrink: 0, width: 32, textAlign: "center" }}>

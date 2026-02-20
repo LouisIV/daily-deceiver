@@ -29,7 +29,7 @@ export function Masthead({
       </div>
 
       <div className="subhead" style={{ marginBottom: 4 }}>
-        Est. MDCCCLXXXI · Cherokee County, Iowa · Library of Congress Collection
+        Est. MDCCCLXXXI · Library of Congress Collection
       </div>
 
       <h1 className="masthead-title">The Daily Deceiver</h1>
@@ -50,7 +50,7 @@ export function Masthead({
         }}
       >
         <span className="subhead" style={{ fontSize: 9 }}>
-          Real: Chronicling America / LOC
+          Powered by the Library of Congress and Chronicling America
         </span>
         {phase === "playing" && (
           <span
@@ -64,9 +64,7 @@ export function Masthead({
             Score: {score} / {current}
           </span>
         )}
-        <span className="subhead" style={{ fontSize: 9 }}>
-          Fake: Claude AI
-        </span>
+
       </div>
 
       <hr className="rule-double" style={{ marginBottom: 20 }} />

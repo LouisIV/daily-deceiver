@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { IM_Fell_English, Playfair_Display, Playfair_Display_SC, UnifrakturMaguntia } from "next/font/google";
+import { Caveat, IM_Fell_English, Playfair_Display, Playfair_Display_SC, UnifrakturMaguntia } from "next/font/google";
 import "./globals.css";
 
 const playfair = Playfair_Display({
@@ -27,6 +27,12 @@ const unifraktur = UnifrakturMaguntia({
   subsets: ["latin"],
   weight: "400",
   variable: "--font-unifraktur",
+});
+
+const caveat = Caveat({
+  subsets: ["latin"],
+  weight: ["400", "600"],
+  variable: "--font-hand",
 });
 
 export const metadata: Metadata = {
@@ -59,7 +65,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={`${playfair.variable} ${playfairSC.variable} ${imFell.variable} ${unifraktur.variable}`}>
+    <html
+      lang="en"
+      className={`${playfair.variable} ${playfairSC.variable} ${imFell.variable} ${unifraktur.variable} ${caveat.variable}`}
+    >
       <body>{children}</body>
     </html>
   );
