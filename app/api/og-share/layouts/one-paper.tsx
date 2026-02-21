@@ -10,17 +10,11 @@ export function OnePaperLayout({
   total,
   grade,
   paper,
-  textureEnabled = true,
-  textureIntensity,
-  textureOpacity,
 }: {
   score: number;
   total: number;
   grade: string;
   paper: SharePaper;
-  textureEnabled?: boolean;
-  textureIntensity?: number;
-  textureOpacity?: number;
 }) {
   return (
     <div
@@ -78,9 +72,6 @@ export function OnePaperLayout({
         <PaperImage
           paper={paper}
           fallbackFontSize={18}
-          textureEnabled={textureEnabled}
-          textureIntensity={textureIntensity}
-          textureOpacity={textureOpacity}
         />
       </div>
 

@@ -6,17 +6,11 @@ export function TwoPapersLayout({
   total,
   grade,
   papers,
-  textureEnabled = true,
-  textureIntensity,
-  textureOpacity,
 }: {
   score: number;
   total: number;
   grade: string;
   papers: [SharePaper, SharePaper];
-  textureEnabled?: boolean;
-  textureIntensity?: number;
-  textureOpacity?: number;
 }) {
   return (
     <div
@@ -52,9 +46,6 @@ export function TwoPapersLayout({
         >
           <PaperImage
             paper={papers[0]}
-            textureEnabled={textureEnabled}
-            textureIntensity={textureIntensity}
-            textureOpacity={textureOpacity}
           />
         </div>
         <div
@@ -70,9 +61,6 @@ export function TwoPapersLayout({
         >
           <PaperImage
             paper={papers[1]}
-            textureEnabled={textureEnabled}
-            textureIntensity={textureIntensity}
-            textureOpacity={textureOpacity}
           />
         </div>
       </div>

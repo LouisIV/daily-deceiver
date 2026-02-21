@@ -1,6 +1,8 @@
 import { ImageResponse } from "next/og";
 import { paperTextureSvgString } from "../../../lib/paper-texture";
-import { decodeSharePayloadToken } from "../../../lib/game/share-server";
+import { getGrade } from "../../../lib/game/grades";
+import { decodeShareParam } from "../../../lib/game/share-decode";
+import type { SharePaper } from "../../../lib/game/share";
 import { NoPapersLayout } from "./layouts/no-papers";
 import { OnePaperLayout } from "./layouts/one-paper";
 import { TwoPapersLayout } from "./layouts/two-papers";
@@ -22,21 +24,35 @@ async function loadGoogleFont(font: string, text: string) {
   throw new Error(`failed to load font: ${font}`);
 }
 
-const ogShareSecret = process.env.OG_SHARE_SECRET;
-const requireEncryption = process.env.NODE_ENV !== "development";
+async function getDailyPapers(): Promise<SharePaper[]> {
+  try {
+    const url = process.env.NEXT_PUBLIC_DAILY_GAME_URL;
+    if (!url) return [];
+    const res = await fetch(url, { next: { revalidate: 3600 } });
+    if (!res.ok) return [];
+    const data = await res.json() as { snippets?: { headline?: string; source?: string; imageUrl?: string }[] };
+    if (!Array.isArray(data.snippets)) return [];
+    return data.snippets.slice(0, 2).map((s) => ({
+      headline: s.headline ?? "",
+      source: s.source,
+      imageUrl: s.imageUrl,
+    }));
+  } catch (err) {
+    console.error("[og-share] getDailyPapers failed:", err);
+    return [];
+  }
+}
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const hash = searchParams.get("h") ?? searchParams.get("hash") ?? "";
-  const {
-    score,
-    total,
-    grade,
-    papers,
-    texture: textureEnabled,
-    textureIntensity,
-    textureOpacity,
-  } = decodeSharePayloadToken(hash, ogShareSecret, { requireEncryption });
+  const s = searchParams.get("s") ?? "";
+  const decoded = decodeShareParam(s);
+  const layout = decoded?.layout ?? 0;
+  const score = decoded?.score ?? 0;
+  const total = decoded?.total ?? 10;
+  const [grade] = getGrade(score);
+
+  const papers = layout > 0 ? await getDailyPapers() : [];
 
   const displayText =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789,.?!'\"·- ";
@@ -108,7 +124,6 @@ export async function GET(request: Request) {
           }}
         />
 
-        {/* Content area — papers extend from top so they sit under the masthead */}
         <div
           style={{
             flex: 1,
@@ -118,39 +133,16 @@ export async function GET(request: Request) {
             boxSizing: "border-box",
           }}
         >
-          {papers.length === 0 && (
-            <NoPapersLayout
-              score={score}
-              total={total}
-              grade={grade}
-              bayer={headlineBayer}
-            />
-          )}
-          {papers.length === 1 && (
-            <OnePaperLayout
-              score={score}
-              total={total}
-              grade={grade}
-              paper={papers[0]}
-              textureEnabled={textureEnabled}
-              textureIntensity={textureIntensity}
-              textureOpacity={textureOpacity}
-            />
-          )}
-          {papers.length >= 2 && (
-            <TwoPapersLayout
-              score={score}
-              total={total}
-              grade={grade}
-              papers={[papers[0], papers[1]]}
-              textureEnabled={textureEnabled}
-              textureIntensity={textureIntensity}
-              textureOpacity={textureOpacity}
-            />
+          {layout === 2 && papers.length >= 2 ? (
+            <TwoPapersLayout score={score} total={total} grade={grade} papers={[papers[0], papers[1]]} />
+          ) : layout >= 1 && papers.length >= 1 ? (
+            <OnePaperLayout score={score} total={total} grade={grade} paper={papers[0]} />
+          ) : (
+            <NoPapersLayout score={score} total={total} grade={grade} bayer={headlineBayer} />
           )}
         </div>
 
-        {/* Masthead strip — full-width #D5D5D5 with strong paper texture */}
+        {/* Masthead strip */}
         <div
           style={{
             position: "absolute",
@@ -178,7 +170,7 @@ export async function GET(request: Request) {
           />
         </div>
 
-        {/* Dateline — on top of strip */}
+        {/* Dateline */}
         <div
           style={{
             position: "absolute",
@@ -206,7 +198,7 @@ export async function GET(request: Request) {
           </div>
         </div>
 
-        {/* Masthead — on top of strip */}
+        {/* Masthead title */}
         <div
           style={{
             position: "absolute",
@@ -250,30 +242,10 @@ export async function GET(request: Request) {
       width: 1200,
       height: 630,
       fonts: [
-        {
-          name: "Playfair Display",
-          data: playfairFont,
-          weight: 700,
-          style: "normal",
-        },
-        {
-          name: "Playfair Display",
-          data: playfairFont900,
-          weight: 900,
-          style: "normal",
-        },
-        {
-          name: "UnifrakturMaguntia",
-          data: unifrakturFont,
-          weight: 400,
-          style: "normal",
-        },
-        {
-          name: "IM Fell English",
-          data: imfellFont,
-          weight: 400,
-          style: "normal",
-        },
+        { name: "Playfair Display", data: playfairFont, weight: 700, style: "normal" },
+        { name: "Playfair Display", data: playfairFont900, weight: 900, style: "normal" },
+        { name: "UnifrakturMaguntia", data: unifrakturFont, weight: 400, style: "normal" },
+        { name: "IM Fell English", data: imfellFont, weight: 400, style: "normal" },
         { name: "Girassol", data: girassolFont, weight: 400, style: "normal" },
       ],
     },

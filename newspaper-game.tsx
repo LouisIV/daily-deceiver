@@ -477,7 +477,7 @@ function Masthead({
       </div>
 
       <div className="subhead" style={{ marginBottom: 4 }}>
-        Est. MDCCCLXXXI · Cherokee County, Iowa · Library of Congress Collection
+        Est. MDCCCLXXXI
       </div>
 
       <h1 className="masthead-title">The Daily Deceiver</h1>
