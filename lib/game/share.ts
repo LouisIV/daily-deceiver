@@ -93,7 +93,7 @@ export function encodeSharePayload(payload: Partial<SharePayload>): string {
   return btoa(encodeURIComponent(JSON.stringify(merged)));
 }
 
-/** Decode hash from URL into SharePayload (legacy plain base64 JSON only). Use decodeSharePayloadToken on server for compressed/encrypted. */
+/** Decode hash from URL into SharePayload. */
 export function decodeSharePayload(hash: string): SharePayload {
   if (!hash || typeof hash !== "string") return { ...DEFAULT_PAYLOAD };
   try {
