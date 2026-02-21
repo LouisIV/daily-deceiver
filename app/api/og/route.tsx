@@ -1,5 +1,6 @@
 import { ImageResponse } from 'next/og';
 import { paperTextureSvgString } from '../../../lib/paper-texture';
+import { DatabendHeadline } from '../../../lib/og-databend';
 
 export const runtime = 'nodejs';
 
@@ -20,11 +21,12 @@ export async function GET(request: Request) {
   const displayText = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789,.?!\'"·-';
   const textureUrl = `data:image/svg+xml;base64,${Buffer.from(paperTextureSvgString()).toString('base64')}`;
 
-  // Gradient Bayer — 2×2 checkerboard masked left-to-right:
-  // invisible over CAN/YOU/SPOT, ramps up over THE, fully opaque over FAKES?
-  // Gradient stops calibrated to space-between layout (~58% = start of THE, ~76% = start of FAKES?)
-  const bayerSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="90"><defs><pattern id="b" x="0" y="0" width="4" height="4" patternUnits="userSpaceOnUse"><rect x="0" y="0" width="2" height="2" fill="#f5ecd7"/><rect x="2" y="2" width="2" height="2" fill="#f5ecd7"/></pattern><linearGradient id="g" x1="0" y1="0" x2="1" y2="0"><stop offset="55%" stop-color="black"/><stop offset="80%" stop-color="white"/></linearGradient><mask id="m"><rect width="100%" height="100%" fill="url(#g)"/></mask></defs><rect width="100%" height="100%" fill="url(#b)" mask="url(#m)"/></svg>`;
-  const bayerUrl = `data:image/svg+xml;base64,${Buffer.from(bayerSvg).toString('base64')}`;
+  const headlineBayer = {
+    width: 1120,
+    height: 90,
+    gradientStartPercent: 55,
+    gradientEndPercent: 80,
+  };
 
   const [playfairFont, playfairFont900, unifrakturFont, imfellFont, girassolFont] = await Promise.all([
     loadGoogleFont('Playfair+Display:wght@700', displayText),
@@ -129,42 +131,23 @@ export async function GET(request: Request) {
             </div>
           </div>
 
-          {/* Headline — gradient Bayer overlay spans full width, ramps up from THE → FAKES? */}
-          <div
-            style={{
-              position: 'relative',
-              display: 'flex',
-              justifyContent: 'space-between',
-              width: '100%',
+          <DatabendHeadline
+            words={[
+              { text: 'CAN', databend: false },
+              { text: 'YOU', databend: false },
+              { text: 'SPOT', databend: false },
+              { text: 'THE', databend: true, intensity: 1.5 },
+              { text: 'FAKES?', databend: true, intensity: 3 },
+            ]}
+            bayer={headlineBayer}
+            containerStyle={{ width: '100%' }}
+            textStyle={{
               fontSize: '76px',
               fontFamily: '"Girassol", serif',
               fontWeight: 400,
-              lineHeight: 1,
               letterSpacing: '-1px',
             }}
-          >
-            <span>CAN</span>
-            <span>YOU</span>
-            <span>SPOT</span>
-            {/* THE — databend at ~30% intensity */}
-            <span style={{ position: 'relative', display: 'flex' }}>
-              <span style={{ visibility: 'hidden' }}>THE</span>
-              <span style={{ position: 'absolute', top: 0, left: -1, clipPath: 'polygon(0% 0%,100% 0%,100% 25%,0% 25%)' }}>THE</span>
-              <span style={{ position: 'absolute', top: 0, left: 1,  clipPath: 'polygon(0% 26%,100% 26%,100% 52%,0% 52%)' }}>THE</span>
-              <span style={{ position: 'absolute', top: 0, left: -2, clipPath: 'polygon(0% 53%,100% 53%,100% 76%,0% 76%)' }}>THE</span>
-              <span style={{ position: 'absolute', top: 0, left: 1,  clipPath: 'polygon(0% 77%,100% 77%,100% 100%,0% 100%)' }}>THE</span>
-            </span>
-            {/* FAKES? — databend at full intensity */}
-            <span style={{ position: 'relative', display: 'flex' }}>
-              <span style={{ visibility: 'hidden' }}>FAKES?</span>
-              <span style={{ position: 'absolute', top: 0, left: -3, clipPath: 'polygon(0% 0%,100% 0%,100% 25%,0% 25%)' }}>FAKES?</span>
-              <span style={{ position: 'absolute', top: 0, left: 2,  clipPath: 'polygon(0% 26%,100% 26%,100% 52%,0% 52%)' }}>FAKES?</span>
-              <span style={{ position: 'absolute', top: 0, left: -5, clipPath: 'polygon(0% 53%,100% 53%,100% 76%,0% 76%)' }}>FAKES?</span>
-              <span style={{ position: 'absolute', top: 0, left: 3,  clipPath: 'polygon(0% 77%,100% 77%,100% 100%,0% 100%)' }}>FAKES?</span>
-            </span>
-            {/* Gradient Bayer overlay — absolute, covers full headline width */}
-            <img src={bayerUrl} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }} />
-          </div>
+          />
 
           {/* Double rule + subheadline */}
           <div style={{ borderTop: '3px solid #2a1a08', marginTop: '5px' }} />

@@ -8,6 +8,7 @@ import { Masthead } from "./components/Masthead";
 import { PlayScreen } from "./components/PlayScreen";
 import { ResultScreen } from "./components/ResultScreen";
 import { getLayout, shuffle } from "@/lib/game/snippets";
+import { getGrade } from "@/lib/game/grades";
 import type { Answered, HistoryItem, Phase, Round, Snippet } from "@/lib/game/types";
 
 const TOTAL = 10;
@@ -98,28 +99,10 @@ export default function App() {
     [answered, current, markPlayed, snippet]
   );
 
-  const grade = (s: number = score): [string, string] => {
-    if (s >= 9)
-      return [
-        "EDITOR-IN-CHIEF",
-        "You could smell the ink from a mile away.",
-      ];
-    if (s >= 7)
-      return [
-        "SEASONED CORRESPONDENT",
-        "A discerning reader of considerable merit.",
-      ];
-    if (s >= 5)
-      return ["CASUAL SUBSCRIBER", "You got your nickel's worth, at least."];
-    if (s >= 3)
-      return ["OCCASIONAL READER", "Perhaps stick to the weather column."];
-    return ["HOPELESSLY DECEIVED", "We suggest canceling your subscription."];
-  };
-
   const next = useCallback(() => {
     if (current + 1 >= rounds.length) {
       setPhase("over");
-      const [gradeTitle] = grade(score);
+      const [gradeTitle] = getGrade(score);
       posthog.capture("game_completed", {
         score,
         total_questions: rounds.length,
@@ -168,7 +151,7 @@ export default function App() {
           <ResultScreen
             score={score}
             total={rounds.length}
-            grade={grade()}
+            grade={getGrade(score)}
             history={history}
             restart={loadGame}
           />

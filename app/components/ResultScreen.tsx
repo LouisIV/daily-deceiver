@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import posthog from "posthog-js";
 import type { HistoryItem } from "@/lib/game/types";
 import { StampButton } from "./StampButton";
 import { getLocSourceLink } from "@/lib/game/source-link";
 import { PaperPreview } from "./PaperPreview";
+import { ResultsShare } from "./ResultsShare";
+import type { SharePaper } from "@/lib/game/share";
 
 export function ResultScreen({
   score,
@@ -222,6 +224,18 @@ export function ResultScreen({
           "{sub}"
         </div>
       </div>
+
+      <ResultsShare
+        score={score}
+        total={total}
+        title={title}
+        sub={sub}
+        papers={uniqueHistory.slice(0, 2).map(({ item }): SharePaper => ({
+          headline: item.snippet.headline,
+          source: item.snippet.source,
+          imageUrl: item.snippet.imageUrl,
+        }))}
+      />
 
       <div style={{ marginBottom: 28 }}>
         <div className="subhead" style={{ marginBottom: 8 }}>
