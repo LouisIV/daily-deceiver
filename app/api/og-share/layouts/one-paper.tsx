@@ -2,6 +2,9 @@ import { DatabendEffect } from "@/lib/og-databend";
 import type { SharePaper } from "../../../../lib/game/share";
 import { PaperImage } from "./paper-image";
 
+const DEFAULT_BACKGROUND_PAPER_URL =
+  "https://tile.loc.gov/image-services/iiif/service:ndnp:nbu:batch_nbu_alliance_ver01:data:sn99021999:0020653882A:1892021501:0214/full/1600,/0/default.jpg";
+
 export function OnePaperLayout({
   score,
   total,
@@ -27,17 +30,49 @@ export function OnePaperLayout({
         flexDirection: "row",
         gap: "20px",
         alignItems: "stretch",
+        position: "relative",
       }}
     >
-      {/* Paper image — top-cropped via natural height + overflow:hidden */}
+      {/* Default paper image — first so it renders behind both the paper and the score card; scaled up so rotated image fully covers */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          overflow: "visible",
+          opacity: 0.5,
+          display: "flex",
+        }}
+      >
+        <img
+          src={DEFAULT_BACKGROUND_PAPER_URL}
+          width={1200}
+          height={630}
+          style={{
+            position: "absolute",
+            left: "50%",
+            top: "50%",
+            width: "280%",
+            height: "280%",
+            objectFit: "cover",
+            objectPosition: "center center",
+            transform: "translate(-50%, -50%) rotate(90deg)",
+          }}
+        />
+      </div>
+
+      {/* Paper image — top-cropped via natural height + overflow:hidden; transparent bg so default paper shows through */}
       <div
         style={{
           flex: "0 0 54%",
           display: "flex",
-          background: "#e8dfc4",
-          overflow: "hidden",
+          background: "transparent",
+          overflow: "visible",
           alignItems: "flex-start",
           rotate: "0.5deg",
+          transform: "translateY(60px) translateX(-20px)",
         }}
       >
         <PaperImage
@@ -49,7 +84,6 @@ export function OnePaperLayout({
         />
       </div>
 
-      <div style={{ width: "1px", background: "#2a1a08", opacity: 0.2 }} />
 
       {/* Score card — paper card with glitch score */}
       <div
@@ -59,10 +93,13 @@ export function OnePaperLayout({
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
+          transform: "translateY(70px) translateX(-20px)",
+          position: "relative",
         }}
       >
         <div
           style={{
+            position: "relative",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",

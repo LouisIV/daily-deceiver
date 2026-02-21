@@ -103,7 +103,7 @@ export async function GET(request: Request) {
           display: "flex",
           flexDirection: "column",
           fontFamily: '"IM Fell English", serif',
-          padding: "24px 8px 32px 8px",
+          padding: "24px 0 32px 0",
           boxSizing: "border-box",
           color: "#1c1008",
           overflow: "visible",
