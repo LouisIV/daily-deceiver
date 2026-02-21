@@ -29,7 +29,7 @@ export function Masthead({
       </div>
 
       <div className="subhead" style={{ marginBottom: 4 }}>
-        Est. MDCCCLXXXI · Library of Congress Collection
+        Est. MDCCCLXXXI
       </div>
 
       <h1 className="masthead-title">The Daily Deceiver</h1>

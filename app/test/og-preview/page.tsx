@@ -51,7 +51,14 @@ function LinkPreviewCard({
             display: "block",
           }}
         />
-        <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: 8 }}>
+        <div
+          style={{
+            padding: "12px 16px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 8,
+          }}
+        >
           <div
             style={{
               fontSize: 14,
@@ -105,7 +112,14 @@ function LinkPreviewCard({
             display: "block",
           }}
         />
-        <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: 6 }}>
+        <div
+          style={{
+            padding: "12px 16px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 6,
+          }}
+        >
           <div style={{ fontSize: 12, color: "#657786" }}>
             {url.replace(/^https?:\/\//, "")}
           </div>
@@ -163,7 +177,15 @@ function LinkPreviewCard({
           flexShrink: 0,
         }}
       />
-      <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
+      <div
+        style={{
+          padding: "12px 16px",
+          display: "flex",
+          flexDirection: "column",
+          gap: 4,
+          flex: 1,
+        }}
+      >
         <div style={{ fontSize: 12, color: "#65676b" }}>
           {url.replace(/^https?:\/\//, "").split("/")[0]}
         </div>
@@ -196,17 +218,65 @@ function LinkPreviewCard({
 export default function TestOgPreviewPage() {
   const [url, setUrl] = useState("https://daily-deceiver.vercel.app");
   const [title, setTitle] = useState("I scored 7/10 — B");
-  const [description, setDescription] = useState("How well can you spot fake news? Test your critical thinking skills in this fun newspaper game.");
+  const [description, setDescription] = useState(
+    "How well can you spot fake news? Test your critical thinking skills in this fun newspaper game.",
+  );
+
+  if (process.env.NODE_ENV !== "development") {
+    return (
+      <div
+        style={{
+          padding: 24,
+          maxWidth: 960,
+          margin: "0 auto",
+          fontFamily: "system-ui, sans-serif",
+        }}
+      >
+        <div style={{ marginBottom: 24 }}>
+          <Link
+            href="/"
+            style={{
+              color: "var(--rule)",
+              fontSize: 14,
+              textDecoration: "underline",
+            }}
+          >
+            ← Back to game
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ padding: 24, maxWidth: 1200, margin: "0 auto", fontFamily: "system-ui, sans-serif" }}>
+    <div
+      style={{
+        padding: 24,
+        maxWidth: 1200,
+        margin: "0 auto",
+        fontFamily: "system-ui, sans-serif",
+      }}
+    >
       <div style={{ marginBottom: 24 }}>
-        <Link href="/test" style={{ color: "var(--rule)", fontSize: 14, textDecoration: "underline" }}>
+        <Link
+          href="/test"
+          style={{
+            color: "var(--rule)",
+            fontSize: 14,
+            textDecoration: "underline",
+          }}
+        >
           ← Back to tests
         </Link>
       </div>
 
-      <h1 style={{ fontFamily: "var(--font-unifraktur), cursive", color: "var(--ink)", marginBottom: 8 }}>
+      <h1
+        style={{
+          fontFamily: "var(--font-unifraktur), cursive",
+          color: "var(--ink)",
+          marginBottom: 8,
+        }}
+      >
         OG Link Preview
       </h1>
       <p style={{ color: "var(--rule)", marginBottom: 24, fontSize: 15 }}>
@@ -228,7 +298,14 @@ export default function TestOgPreviewPage() {
           }}
         >
           <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "var(--ink)" }}>
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: 1,
+                color: "var(--ink)",
+              }}
+            >
               URL
             </span>
             <input
@@ -240,7 +317,14 @@ export default function TestOgPreviewPage() {
           </label>
 
           <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "var(--ink)" }}>
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: 1,
+                color: "var(--ink)",
+              }}
+            >
               TITLE
             </span>
             <textarea
@@ -256,7 +340,14 @@ export default function TestOgPreviewPage() {
           </label>
 
           <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "var(--ink)" }}>
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: 1,
+                color: "var(--ink)",
+              }}
+            >
               DESCRIPTION
             </span>
             <textarea
@@ -273,9 +364,25 @@ export default function TestOgPreviewPage() {
         </div>
 
         {/* Previews */}
-        <div style={{ flex: 1, minWidth: 300, display: "flex", flexDirection: "column", gap: 24 }}>
+        <div
+          style={{
+            flex: 1,
+            minWidth: 300,
+            display: "flex",
+            flexDirection: "column",
+            gap: 24,
+          }}
+        >
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "var(--rule)", marginBottom: 12 }}>
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: 1,
+                color: "var(--rule)",
+                marginBottom: 12,
+              }}
+            >
               DISCORD
             </div>
             <LinkPreviewCard
@@ -288,7 +395,15 @@ export default function TestOgPreviewPage() {
           </div>
 
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "var(--rule)", marginBottom: 12 }}>
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: 1,
+                color: "var(--rule)",
+                marginBottom: 12,
+              }}
+            >
               TWITTER / X
             </div>
             <LinkPreviewCard
@@ -301,7 +416,15 @@ export default function TestOgPreviewPage() {
           </div>
 
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "var(--rule)", marginBottom: 12 }}>
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: 1,
+                color: "var(--rule)",
+                marginBottom: 12,
+              }}
+            >
               FACEBOOK
             </div>
             <LinkPreviewCard

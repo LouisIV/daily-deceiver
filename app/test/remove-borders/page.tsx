@@ -102,7 +102,13 @@ function Tag({
     >
       {label} {value}
       {auto && (
-        <span style={{ fontSize: 10, opacity: 0.75, fontFamily: "system-ui, sans-serif" }}>
+        <span
+          style={{
+            fontSize: 10,
+            opacity: 0.75,
+            fontFamily: "system-ui, sans-serif",
+          }}
+        >
           auto
         </span>
       )}
@@ -115,8 +121,12 @@ export default function TestRemoveBordersPage() {
   const [mode, setMode] = useState<Mode>("both");
 
   // undefined = auto-detect; number = explicit override
-  const [blackOverride, setBlackOverride] = useState<number | undefined>(undefined);
-  const [whiteOverride, setWhiteOverride] = useState<number | undefined>(undefined);
+  const [blackOverride, setBlackOverride] = useState<number | undefined>(
+    undefined,
+  );
+  const [whiteOverride, setWhiteOverride] = useState<number | undefined>(
+    undefined,
+  );
 
   // What the sliders display (seeded from auto-detect, adjustable)
   const [blackSlider, setBlackSlider] = useState(40);
@@ -126,7 +136,8 @@ export default function TestRemoveBordersPage() {
   const [detecting, setDetecting] = useState(false);
 
   const [processedSrc, setProcessedSrc] = useState<string | null>(null);
-  const [usedThresholds, setUsedThresholds] = useState<DetectedThresholds | null>(null);
+  const [usedThresholds, setUsedThresholds] =
+    useState<DetectedThresholds | null>(null);
   const [processing, setProcessing] = useState(false);
 
   const prevObjectUrl = useRef<string | null>(null);
@@ -164,8 +175,10 @@ export default function TestRemoveBordersPage() {
     if (!url.trim()) return;
 
     const params = new URLSearchParams({ mode });
-    if (showBlack && blackOverride !== undefined) params.set("blackThreshold", String(blackOverride));
-    if (showWhite && whiteOverride !== undefined) params.set("whiteThreshold", String(whiteOverride));
+    if (showBlack && blackOverride !== undefined)
+      params.set("blackThreshold", String(blackOverride));
+    if (showWhite && whiteOverride !== undefined)
+      params.set("whiteThreshold", String(whiteOverride));
 
     const apiUrl = `/api/remove-borders?url=${encodeURIComponent(url.trim())}&${params}`;
 
@@ -176,7 +189,8 @@ export default function TestRemoveBordersPage() {
       .then(async (res) => {
         const bt = parseInt(res.headers.get("X-Black-Threshold") ?? "", 10);
         const wt = parseInt(res.headers.get("X-White-Threshold") ?? "", 10);
-        if (!isNaN(bt) && !isNaN(wt)) setUsedThresholds({ blackThreshold: bt, whiteThreshold: wt });
+        if (!isNaN(bt) && !isNaN(wt))
+          setUsedThresholds({ blackThreshold: bt, whiteThreshold: wt });
 
         const blob = await res.blob();
         const objectUrl = URL.createObjectURL(blob);
@@ -196,17 +210,44 @@ export default function TestRemoveBordersPage() {
 
   // Revoke on unmount
   useEffect(() => {
-    return () => { if (prevObjectUrl.current) URL.revokeObjectURL(prevObjectUrl.current); };
+    return () => {
+      if (prevObjectUrl.current) URL.revokeObjectURL(prevObjectUrl.current);
+    };
   }, []);
 
-  const modeLabel =
-    usedThresholds
-      ? mode === "black"
-        ? `black ≤ ${usedThresholds.blackThreshold}`
-        : mode === "white"
+  const modeLabel = usedThresholds
+    ? mode === "black"
+      ? `black ≤ ${usedThresholds.blackThreshold}`
+      : mode === "white"
         ? `white ≥ ${usedThresholds.whiteThreshold}`
         : `black ≤ ${usedThresholds.blackThreshold}, white ≥ ${usedThresholds.whiteThreshold}`
-      : "processing…";
+    : "processing…";
+
+  if (process.env.NODE_ENV !== "development") {
+    return (
+      <div
+        style={{
+          padding: 24,
+          maxWidth: 960,
+          margin: "0 auto",
+          fontFamily: "system-ui, sans-serif",
+        }}
+      >
+        <div style={{ marginBottom: 24 }}>
+          <Link
+            href="/"
+            style={{
+              color: "var(--rule)",
+              fontSize: 14,
+              textDecoration: "underline",
+            }}
+          >
+            ← Back to game
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -220,7 +261,11 @@ export default function TestRemoveBordersPage() {
       <div style={{ marginBottom: 24 }}>
         <Link
           href="/"
-          style={{ color: "var(--rule)", fontSize: 14, textDecoration: "underline" }}
+          style={{
+            color: "var(--rule)",
+            fontSize: 14,
+            textDecoration: "underline",
+          }}
         >
           ← Back to game
         </Link>
@@ -238,7 +283,8 @@ export default function TestRemoveBordersPage() {
       <p style={{ color: "var(--rule)", marginBottom: 24, fontSize: 14 }}>
         Pass 1 — flood-fills from image edges through near-black/white pixels.
         Pass 2 — removes any opaque fragments not connected to the main body.
-        Thresholds are auto-detected from edge samples; sliders let you override.
+        Thresholds are auto-detected from edge samples; sliders let you
+        override.
       </p>
 
       {/* Controls */}
@@ -255,7 +301,14 @@ export default function TestRemoveBordersPage() {
       >
         {/* URL */}
         <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "var(--ink)" }}>
+          <span
+            style={{
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: 1,
+              color: "var(--ink)",
+            }}
+          >
             IMAGE URL (loc.gov only)
           </span>
           <input
@@ -287,17 +340,41 @@ export default function TestRemoveBordersPage() {
         </label>
 
         {/* Auto-detected thresholds */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8, minHeight: 24 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "var(--ink)" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            minHeight: 24,
+          }}
+        >
+          <span
+            style={{
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: 1,
+              color: "var(--ink)",
+            }}
+          >
             AUTO-DETECTED
           </span>
           {detecting && (
-            <span style={{ fontSize: 11, color: "var(--rule)" }}>sampling…</span>
+            <span style={{ fontSize: 11, color: "var(--rule)" }}>
+              sampling…
+            </span>
           )}
           {detected && !detecting && (
             <>
-              <Tag label="black ≤" value={detected.blackThreshold} auto={blackOverride === undefined} />
-              <Tag label="white ≥" value={detected.whiteThreshold} auto={whiteOverride === undefined} />
+              <Tag
+                label="black ≤"
+                value={detected.blackThreshold}
+                auto={blackOverride === undefined}
+              />
+              <Tag
+                label="white ≥"
+                value={detected.whiteThreshold}
+                auto={whiteOverride === undefined}
+              />
               {(blackOverride !== undefined || whiteOverride !== undefined) && (
                 <button
                   type="button"
@@ -325,23 +402,53 @@ export default function TestRemoveBordersPage() {
 
         {/* Mode */}
         <div>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "var(--ink)", marginBottom: 6 }}>
+          <div
+            style={{
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: 1,
+              color: "var(--ink)",
+              marginBottom: 6,
+            }}
+          >
             MODE
           </div>
           <div style={{ display: "flex" }}>
-            <ModeButton label="BLACK" active={mode === "black"} onClick={() => setMode("black")} />
-            <ModeButton label="WHITE" active={mode === "white"} onClick={() => setMode("white")} />
-            <ModeButton label="BOTH"  active={mode === "both"}  onClick={() => setMode("both")}  />
+            <ModeButton
+              label="BLACK"
+              active={mode === "black"}
+              onClick={() => setMode("black")}
+            />
+            <ModeButton
+              label="WHITE"
+              active={mode === "white"}
+              onClick={() => setMode("white")}
+            />
+            <ModeButton
+              label="BOTH"
+              active={mode === "both"}
+              onClick={() => setMode("both")}
+            />
           </div>
         </div>
 
         {/* Black threshold */}
         {showBlack && (
           <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "var(--ink)" }}>
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: 1,
+                color: "var(--ink)",
+              }}
+            >
               BLACK THRESHOLD — {blackSlider}
               {blackOverride === undefined && detected && (
-                <span style={{ fontWeight: 400, color: "var(--rule)" }}> (auto)</span>
+                <span style={{ fontWeight: 400, color: "var(--rule)" }}>
+                  {" "}
+                  (auto)
+                </span>
               )}
             </span>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -357,7 +464,15 @@ export default function TestRemoveBordersPage() {
                 }}
                 style={{ flex: 1 }}
               />
-              <span style={{ fontFamily: "monospace", fontSize: 16, minWidth: 36, textAlign: "right", color: "var(--ink)" }}>
+              <span
+                style={{
+                  fontFamily: "monospace",
+                  fontSize: 16,
+                  minWidth: 36,
+                  textAlign: "right",
+                  color: "var(--ink)",
+                }}
+              >
                 {blackSlider}
               </span>
             </div>
@@ -367,10 +482,20 @@ export default function TestRemoveBordersPage() {
         {/* White threshold */}
         {showWhite && (
           <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "var(--ink)" }}>
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: 1,
+                color: "var(--ink)",
+              }}
+            >
               WHITE THRESHOLD — {whiteSlider}
               {whiteOverride === undefined && detected && (
-                <span style={{ fontWeight: 400, color: "var(--rule)" }}> (auto)</span>
+                <span style={{ fontWeight: 400, color: "var(--rule)" }}>
+                  {" "}
+                  (auto)
+                </span>
               )}
             </span>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -386,7 +511,15 @@ export default function TestRemoveBordersPage() {
                 }}
                 style={{ flex: 1 }}
               />
-              <span style={{ fontFamily: "monospace", fontSize: 16, minWidth: 36, textAlign: "right", color: "var(--ink)" }}>
+              <span
+                style={{
+                  fontFamily: "monospace",
+                  fontSize: 16,
+                  minWidth: 36,
+                  textAlign: "right",
+                  color: "var(--ink)",
+                }}
+              >
                 {whiteSlider}
               </span>
             </div>
@@ -397,7 +530,15 @@ export default function TestRemoveBordersPage() {
       {/* Before / After */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
         <div>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "var(--rule)", marginBottom: 8 }}>
+          <div
+            style={{
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: 1,
+              color: "var(--rule)",
+              marginBottom: 8,
+            }}
+          >
             BEFORE — original
           </div>
           <CheckerBg>
@@ -412,9 +553,21 @@ export default function TestRemoveBordersPage() {
         </div>
 
         <div>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "var(--rule)", marginBottom: 8 }}>
+          <div
+            style={{
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: 1,
+              color: "var(--rule)",
+              marginBottom: 8,
+            }}
+          >
             AFTER — {modeLabel}
-            {processing && <span style={{ fontWeight: 400, marginLeft: 8 }}>processing…</span>}
+            {processing && (
+              <span style={{ fontWeight: 400, marginLeft: 8 }}>
+                processing…
+              </span>
+            )}
           </div>
           <CheckerBg>
             {processedSrc ? (
@@ -422,7 +575,12 @@ export default function TestRemoveBordersPage() {
               <img
                 src={processedSrc}
                 alt="Processed newspaper scan with transparent border"
-                style={{ width: "100%", display: "block", opacity: processing ? 0.4 : 1, transition: "opacity 0.2s" }}
+                style={{
+                  width: "100%",
+                  display: "block",
+                  opacity: processing ? 0.4 : 1,
+                  transition: "opacity 0.2s",
+                }}
               />
             ) : (
               <div style={{ padding: 40, color: "var(--rule)", fontSize: 13 }}>

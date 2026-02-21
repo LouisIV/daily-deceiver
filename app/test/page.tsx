@@ -24,15 +24,61 @@ export default function TestLandingPage() {
     },
   ];
 
+  if (process.env.NODE_ENV !== "development") {
+    return (
+      <div
+        style={{
+          padding: 24,
+          maxWidth: 960,
+          margin: "0 auto",
+          fontFamily: "system-ui, sans-serif",
+        }}
+      >
+        <div style={{ marginBottom: 24 }}>
+          <Link
+            href="/"
+            style={{
+              color: "var(--rule)",
+              fontSize: 14,
+              textDecoration: "underline",
+            }}
+          >
+            ← Back to game
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div style={{ padding: 24, maxWidth: 900, margin: "0 auto", fontFamily: "system-ui, sans-serif" }}>
+    <div
+      style={{
+        padding: 24,
+        maxWidth: 900,
+        margin: "0 auto",
+        fontFamily: "system-ui, sans-serif",
+      }}
+    >
       <div style={{ marginBottom: 24 }}>
-        <Link href="/" style={{ color: "var(--rule)", fontSize: 14, textDecoration: "underline" }}>
+        <Link
+          href="/"
+          style={{
+            color: "var(--rule)",
+            fontSize: 14,
+            textDecoration: "underline",
+          }}
+        >
           ← Back to game
         </Link>
       </div>
 
-      <h1 style={{ fontFamily: "var(--font-unifraktur), cursive", color: "var(--ink)", marginBottom: 8 }}>
+      <h1
+        style={{
+          fontFamily: "var(--font-unifraktur), cursive",
+          color: "var(--ink)",
+          marginBottom: 8,
+        }}
+      >
         Test Pages
       </h1>
       <p style={{ color: "var(--rule)", marginBottom: 24, fontSize: 15 }}>
@@ -54,7 +100,14 @@ export default function TestLandingPage() {
               color: "var(--ink)",
             }}
           >
-            <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 4, fontSize: 15 }}>
+            <div
+              style={{
+                fontWeight: 700,
+                color: "var(--ink)",
+                marginBottom: 4,
+                fontSize: 15,
+              }}
+            >
               {test.title}
             </div>
             <div style={{ fontSize: 13, color: "var(--rule)" }}>
@@ -63,8 +116,6 @@ export default function TestLandingPage() {
           </Link>
         ))}
       </div>
-
-     
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 import { paperTextureSvgString } from "../../../lib/paper-texture";
-import { decodePapers } from "../../../lib/game/share";
+import { decodeSharePayloadToken } from "../../../lib/game/share-server";
 import { NoPapersLayout } from "./layouts/no-papers";
 import { OnePaperLayout } from "./layouts/one-paper";
 import { TwoPapersLayout } from "./layouts/two-papers";
@@ -22,35 +22,21 @@ async function loadGoogleFont(font: string, text: string) {
   throw new Error(`failed to load font: ${font}`);
 }
 
-function clampScore(value: number, min: number, max: number) {
-  if (Number.isNaN(value)) return min;
-  return Math.min(Math.max(value, min), max);
-}
+const ogShareSecret = process.env.OG_SHARE_SECRET;
+const requireEncryption = process.env.NODE_ENV !== "development";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const rawScore = parseInt(searchParams.get("score") ?? "0", 10);
-  const rawTotal = parseInt(searchParams.get("total") ?? "10", 10);
-  const score = clampScore(rawScore, 0, rawTotal);
-  const total = clampScore(rawTotal, 1, 100);
-  const grade = searchParams.get("grade") ?? "Final Verdict";
-  const papers = decodePapers(searchParams.get("papers") ?? "");
-  const textureParam = searchParams.get("texture");
-  const textureEnabled =
-    textureParam === null ||
-    textureParam === "" ||
-    textureParam === "1" ||
-    textureParam === "true";
-  const rawIntensity = searchParams.get("textureIntensity");
-  const textureIntensity =
-    rawIntensity !== null && rawIntensity !== ""
-      ? Math.max(0, Math.min(1, Number(rawIntensity)))
-      : undefined;
-  const rawOpacity = searchParams.get("textureOpacity");
-  const textureOpacity =
-    rawOpacity !== null && rawOpacity !== ""
-      ? Math.max(0, Math.min(1, Number(rawOpacity)))
-      : undefined;
+  const hash = searchParams.get("h") ?? searchParams.get("hash") ?? "";
+  const {
+    score,
+    total,
+    grade,
+    papers,
+    texture: textureEnabled,
+    textureIntensity,
+    textureOpacity,
+  } = decodeSharePayloadToken(hash, ogShareSecret, { requireEncryption });
 
   const displayText =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789,.?!'\"·- ";

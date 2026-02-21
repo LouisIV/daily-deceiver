@@ -1,9 +1,43 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { GRADES } from "@/lib/game/grades";
-import { encodePapers } from "@/lib/game/share";
+import { encodeSharePayload } from "@/lib/game/share";
+
+const GZIP_MAGIC = new Uint8Array([0x1f, 0x8b]);
+
+/** Detect share token format from the hash string (client-side, no secret). */
+function getShareTokenKind(hash: string): "legacy" | "gzip" | "encrypted" {
+  if (!hash?.length) return "legacy";
+  try {
+    let b64 = hash.replace(/-/g, "+").replace(/_/g, "/");
+    const pad = b64.length % 4;
+    if (pad) b64 += "=".repeat(4 - pad);
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    if (
+      bytes.length >= 2 &&
+      bytes[0] === GZIP_MAGIC[0] &&
+      bytes[1] === GZIP_MAGIC[1]
+    ) {
+      return "gzip";
+    }
+    if (bytes.length >= 28) {
+      return "encrypted";
+    }
+    const decoded = decodeURIComponent(
+      Array.from(bytes)
+        .map((b) => String.fromCharCode(b))
+        .join(""),
+    );
+    JSON.parse(decoded);
+    return "legacy";
+  } catch {
+    return "encrypted";
+  }
+}
 
 const inputStyle: React.CSSProperties = {
   padding: "6px 8px",
@@ -36,7 +70,14 @@ function PaperFields({
         background: "var(--paper)",
       }}
     >
-      <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "var(--ink)" }}>
+      <span
+        style={{
+          fontSize: 11,
+          fontWeight: 700,
+          letterSpacing: 1,
+          color: "var(--ink)",
+        }}
+      >
         {label}
       </span>
       <label style={{ display: "flex", flexDirection: "column", gap: 3 }}>
@@ -59,47 +100,142 @@ export default function TestOgSharePage() {
   const [grade, setGrade] = useState(GRADES[1].title);
   const [numPapers, setNumPapers] = useState<0 | 1 | 2>(0);
   const [paper1Url, setPaper1Url] = useState(
-    "https://tile.loc.gov/image-services/iiif/service:ndnp:nbu:batch_nbu_fairbury_ver01:data:sn96080161:00206539215:1899033001:0532/full/pct:6.25/0/default.jpg"
+    "https://tile.loc.gov/image-services/iiif/service:ndnp:nbu:batch_nbu_fairbury_ver01:data:sn96080161:00206539215:1899033001:0532/full/pct:6.25/0/default.jpg",
   );
   const [paper2Url, setPaper2Url] = useState(
-    "https://tile.loc.gov/image-services/iiif/service:ndnp:dlc:batch_dlc_triumph_ver02:data:sn83030214:00175036817:1898021701:0297/full/pct:3.125/0/default.jpg"
+    "https://tile.loc.gov/image-services/iiif/service:ndnp:dlc:batch_dlc_triumph_ver02:data:sn83030214:00175036817:1898021701:0297/full/pct:3.125/0/default.jpg",
   );
-  const [bust, setBust] = useState(0);
   const [textureEnabled, setTextureEnabled] = useState(true);
   const [textureIntensity, setTextureIntensity] = useState(80); // 0–100%, texture strength
   const [textureOpacity, setTextureOpacity] = useState(22); // 0–100%, overlay opacity
+  const [useServerEncode, setUseServerEncode] = useState(false);
+  const [serverHash, setServerHash] = useState<string | null>(null);
 
   const papers =
     numPapers === 0
       ? []
       : numPapers === 1
-      ? [{ headline: "Paper One", imageUrl: paper1Url || undefined }]
-      : [
-          { headline: "Paper One", imageUrl: paper1Url || undefined },
-          { headline: "Paper Two", imageUrl: paper2Url || undefined },
-        ];
+        ? [{ headline: "Paper One", imageUrl: paper1Url || undefined }]
+        : [
+            { headline: "Paper One", imageUrl: paper1Url || undefined },
+            { headline: "Paper Two", imageUrl: paper2Url || undefined },
+          ];
 
-  const params = new URLSearchParams({
-    score: String(score),
-    total: String(total),
+  const clientHash = encodeSharePayload({
+    score,
+    total,
     grade,
-    _bust: String(bust),
+    papers,
+    texture: textureEnabled,
+    textureIntensity: textureIntensity / 100,
+    textureOpacity: textureOpacity / 100,
   });
-  if (papers.length > 0) params.set("papers", encodePapers(papers));
-  if (!textureEnabled) params.set("texture", "0");
-  params.set("textureIntensity", String(textureIntensity / 100));
-  params.set("textureOpacity", String(textureOpacity / 100));
-  const imageUrl = `/api/og-share?${params.toString()}`;
+
+  const hash = useServerEncode && serverHash != null ? serverHash : clientHash;
+  const imageUrl = `/api/og-share?h=${encodeURIComponent(hash)}`;
+  const tokenKind = getShareTokenKind(hash);
+
+  const payloadKey = useMemo(
+    () =>
+      JSON.stringify({
+        score,
+        total,
+        grade,
+        papers,
+        textureEnabled,
+        textureIntensity,
+        textureOpacity,
+      }),
+    [score, total, grade, numPapers, paper1Url, paper2Url, textureEnabled, textureIntensity, textureOpacity],
+  );
+
+  useEffect(() => {
+    if (!useServerEncode) {
+      setServerHash(null);
+      return;
+    }
+    let cancelled = false;
+    const payload = {
+      score,
+      total,
+      grade,
+      papers,
+      texture: textureEnabled,
+      textureIntensity: textureIntensity / 100,
+      textureOpacity: textureOpacity / 100,
+    };
+    fetch("/api/share/encode", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { h?: string } | null) => {
+        if (!cancelled && data?.h) setServerHash(data.h);
+      })
+      .catch(() => {
+        if (!cancelled) setServerHash(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [useServerEncode, payloadKey]);
+
+  if (process.env.NODE_ENV !== "development") {
+    return (
+      <div
+        style={{
+          padding: 24,
+          maxWidth: 960,
+          margin: "0 auto",
+          fontFamily: "system-ui, sans-serif",
+        }}
+      >
+        <div style={{ marginBottom: 24 }}>
+          <Link
+            href="/"
+            style={{
+              color: "var(--rule)",
+              fontSize: 14,
+              textDecoration: "underline",
+            }}
+          >
+            ← Back to game
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ padding: 24, maxWidth: 960, margin: "0 auto", fontFamily: "system-ui, sans-serif" }}>
+    <div
+      style={{
+        padding: 24,
+        maxWidth: 960,
+        margin: "0 auto",
+        fontFamily: "system-ui, sans-serif",
+      }}
+    >
       <div style={{ marginBottom: 24 }}>
-        <Link href="/" style={{ color: "var(--rule)", fontSize: 14, textDecoration: "underline" }}>
+        <Link
+          href="/"
+          style={{
+            color: "var(--rule)",
+            fontSize: 14,
+            textDecoration: "underline",
+          }}
+        >
           ← Back to game
         </Link>
       </div>
 
-      <h1 style={{ fontFamily: "var(--font-unifraktur), cursive", color: "var(--ink)", marginBottom: 20 }}>
+      <h1
+        style={{
+          fontFamily: "var(--font-unifraktur), cursive",
+          color: "var(--ink)",
+          marginBottom: 20,
+        }}
+      >
         OG Share Image Preview
       </h1>
 
@@ -117,7 +253,14 @@ export default function TestOgSharePage() {
           }}
         >
           <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "var(--ink)", letterSpacing: 1 }}>
+            <span
+              style={{
+                fontSize: 13,
+                fontWeight: 700,
+                color: "var(--ink)",
+                letterSpacing: 1,
+              }}
+            >
               SCORE
             </span>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -129,14 +272,29 @@ export default function TestOgSharePage() {
                 onChange={(e) => setScore(Number(e.target.value))}
                 style={{ flex: 1 }}
               />
-              <span style={{ fontFamily: "monospace", fontSize: 18, minWidth: 36, textAlign: "right", color: "var(--ink)" }}>
+              <span
+                style={{
+                  fontFamily: "monospace",
+                  fontSize: 18,
+                  minWidth: 36,
+                  textAlign: "right",
+                  color: "var(--ink)",
+                }}
+              >
                 {score}
               </span>
             </div>
           </label>
 
           <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "var(--ink)", letterSpacing: 1 }}>
+            <span
+              style={{
+                fontSize: 13,
+                fontWeight: 700,
+                color: "var(--ink)",
+                letterSpacing: 1,
+              }}
+            >
               TOTAL
             </span>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -152,14 +310,29 @@ export default function TestOgSharePage() {
                 }}
                 style={{ flex: 1 }}
               />
-              <span style={{ fontFamily: "monospace", fontSize: 18, minWidth: 36, textAlign: "right", color: "var(--ink)" }}>
+              <span
+                style={{
+                  fontFamily: "monospace",
+                  fontSize: 18,
+                  minWidth: 36,
+                  textAlign: "right",
+                  color: "var(--ink)",
+                }}
+              >
                 {total}
               </span>
             </div>
           </label>
 
           <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "var(--ink)", letterSpacing: 1 }}>
+            <span
+              style={{
+                fontSize: 13,
+                fontWeight: 700,
+                color: "var(--ink)",
+                letterSpacing: 1,
+              }}
+            >
               GRADE
             </span>
             <select
@@ -168,7 +341,9 @@ export default function TestOgSharePage() {
               style={{ ...inputStyle, fontSize: 13 }}
             >
               {GRADES.map((g) => (
-                <option key={g.title} value={g.title}>{g.title}</option>
+                <option key={g.title} value={g.title}>
+                  {g.title}
+                </option>
               ))}
             </select>
             <input
@@ -181,7 +356,14 @@ export default function TestOgSharePage() {
           </label>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "var(--ink)", letterSpacing: 1 }}>
+            <span
+              style={{
+                fontSize: 13,
+                fontWeight: 700,
+                color: "var(--ink)",
+                letterSpacing: 1,
+              }}
+            >
               PAPERS
             </span>
             <div style={{ display: "flex", gap: 8 }}>
@@ -224,21 +406,39 @@ export default function TestOgSharePage() {
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "var(--ink)", letterSpacing: 1 }}>
+            <span
+              style={{
+                fontSize: 13,
+                fontWeight: 700,
+                color: "var(--ink)",
+                letterSpacing: 1,
+              }}
+            >
               PAPER TEXTURE
             </span>
-            <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                cursor: "pointer",
+              }}
+            >
               <input
                 type="checkbox"
                 checked={textureEnabled}
                 onChange={(e) => setTextureEnabled(e.target.checked)}
                 style={{ width: 18, height: 18 }}
               />
-              <span style={{ fontSize: 13, color: "var(--ink)" }}>Enable paper texture on clips</span>
+              <span style={{ fontSize: 13, color: "var(--ink)" }}>
+                Enable paper texture on clips
+              </span>
             </label>
             {textureEnabled && (
               <>
-                <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <label
+                  style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                >
                   <span style={{ fontSize: 11, color: "var(--rule)" }}>
                     Intensity: {textureIntensity}%
                   </span>
@@ -247,11 +447,15 @@ export default function TestOgSharePage() {
                     min={0}
                     max={100}
                     value={textureIntensity}
-                    onChange={(e) => setTextureIntensity(Number(e.target.value))}
+                    onChange={(e) =>
+                      setTextureIntensity(Number(e.target.value))
+                    }
                     style={{ width: "100%" }}
                   />
                 </label>
-                <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <label
+                  style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                >
                   <span style={{ fontSize: 11, color: "var(--rule)" }}>
                     Opacity: {textureOpacity}%
                   </span>
@@ -268,25 +472,68 @@ export default function TestOgSharePage() {
             )}
           </div>
 
-          <button
-            onClick={() => setBust((b) => b + 1)}
+          <label
             style={{
-              padding: "8px 16px",
-              background: "var(--ink)",
-              color: "var(--cream)",
-              border: "none",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
               cursor: "pointer",
-              fontFamily: "system-ui, sans-serif",
-              fontSize: 13,
-              letterSpacing: 1,
             }}
           >
-            REFRESH IMAGE
-          </button>
+            <input
+              type="checkbox"
+              checked={useServerEncode}
+              onChange={(e) => setUseServerEncode(e.target.checked)}
+              style={{ width: 18, height: 18 }}
+            />
+            <span style={{ fontSize: 13, color: "var(--ink)" }}>
+              Use server encode (compressed + encrypted when secret set)
+            </span>
+          </label>
 
-          <div style={{ fontSize: 12, color: "var(--rule)", borderTop: "1px solid var(--aged)", paddingTop: 12 }}>
+          <div
+            style={{
+              fontSize: 12,
+              color: "var(--rule)",
+              borderTop: "1px solid var(--aged)",
+              paddingTop: 12,
+            }}
+          >
+            <div style={{ marginBottom: 4, fontWeight: 600 }}>Token</div>
+            <div
+              style={{
+                marginBottom: 6,
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <span
+                style={{
+                  padding: "2px 8px",
+                  fontSize: 11,
+                  fontWeight: 600,
+                  background:
+                    tokenKind === "encrypted"
+                      ? "var(--ink)"
+                      : tokenKind === "gzip"
+                        ? "rgba(28, 16, 8, 0.5)"
+                        : "var(--aged)",
+                  color:
+                    tokenKind === "encrypted" ? "var(--cream)" : "var(--ink)",
+                }}
+              >
+                {tokenKind === "encrypted"
+                  ? "Encrypted"
+                  : tokenKind === "gzip"
+                    ? "Compressed (gzip)"
+                    : "Legacy (plain)"}
+              </span>
+            </div>
             <div style={{ marginBottom: 4, fontWeight: 600 }}>API URL</div>
-            <code style={{ wordBreak: "break-all", fontSize: 11 }}>{imageUrl}</code>
+            <code style={{ wordBreak: "break-all", fontSize: 11 }}>
+              {imageUrl}
+            </code>
           </div>
         </div>
 

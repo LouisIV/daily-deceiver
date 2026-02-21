@@ -1,22 +1,20 @@
 import type { Metadata } from "next";
+import { decodeSharePayloadToken } from "@/lib/game/share-server";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://newspaper-game.vercel.app";
+const ogShareSecret = process.env.OG_SHARE_SECRET;
+const requireEncryption = process.env.NODE_ENV !== "development";
 
 type SharePageProps = {
-  searchParams: Promise<{
-    score?: string;
-    total?: string;
-    grade?: string;
-    papers?: string;
-  }>;
+  searchParams: Promise<{ h?: string; hash?: string }>;
 };
 
 export async function generateMetadata({ searchParams }: SharePageProps): Promise<Metadata> {
-  const { score = "0", total = "10", grade = "Final Verdict", papers } = await searchParams;
-  const params = new URLSearchParams({ score, total, grade });
-  if (papers) params.set("papers", papers);
-  const imageUrl = `/api/og-share?${params.toString()}`;
-  const shareUrl = `/share?${params.toString()}`;
+  const { h, hash } = await searchParams;
+  const payload = decodeSharePayloadToken(h ?? hash ?? "", ogShareSecret, { requireEncryption });
+  const { score, total, grade } = payload;
+  const shareUrl = `/share?h=${encodeURIComponent(h ?? hash ?? "")}`;
+  const imageUrl = `/api/og-share?h=${encodeURIComponent(h ?? hash ?? "")}`;
   const title = `Score ${score}/${total} — ${grade}`;
   const description = "Play The Daily Deceiver and share your score.";
 
@@ -48,7 +46,8 @@ export async function generateMetadata({ searchParams }: SharePageProps): Promis
 }
 
 export default async function SharePage({ searchParams }: SharePageProps) {
-  const { score = "0", total = "10", grade = "Final Verdict" } = await searchParams;
+  const { h, hash } = await searchParams;
+  const { score, total, grade } = decodeSharePayloadToken(h ?? hash ?? "", ogShareSecret, { requireEncryption });
 
   return (
     <main
