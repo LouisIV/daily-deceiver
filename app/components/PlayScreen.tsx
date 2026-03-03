@@ -3,7 +3,7 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import posthog from "posthog-js";
-import type { Answered, Round } from "@/lib/game/types";
+import type { Answered, HistoryItem, Round } from "@/lib/game/types";
 import { Clipping } from "./Clipping";
 import { NewsButton } from "./NewsButton";
 import { StampButton } from "./StampButton";
@@ -23,6 +23,7 @@ export function PlayScreen({
   answered,
   guess,
   next,
+  history,
 }: {
   snippet: Round;
   current: number;
@@ -30,6 +31,7 @@ export function PlayScreen({
   answered: Answered;
   guess: (isReal: boolean) => void;
   next: () => void;
+  history: HistoryItem[];
 }) {
   const sourceLink = getLocSourceLink(snippet);
   const sourceLabel = snippet.source || "Library of Congress";
@@ -54,7 +56,9 @@ export function PlayScreen({
               borderRadius: 4,
               background:
                 i < current
-                  ? "var(--ink)"
+                  ? history[i]?.correct
+                    ? "var(--green)"
+                    : "var(--red)"
                   : i === current
                   ? "#c4972a"
                   : "var(--aged)",

@@ -112,7 +112,15 @@ async function main() {
     .sort((a, b) => b.score - a.score);
 
   logStep(`Scored reals: ${scoredReals.length}, scored fakes: ${scoredFakes.length}`);
+  const MIN_REALS = 2; // Ensure at least 2 real snippets in every game
   const selectedReals = scoredReals.slice(0, TARGET_REAL);
+  
+  // Ensure minimum real requirement is met
+  if (selectedReals.length < MIN_REALS) {
+    logStep(`WARNING: Only ${selectedReals.length} real snippets available, need at least ${MIN_REALS}`);
+    throw new Error(`Insufficient real snippets: got ${selectedReals.length}, minimum required is ${MIN_REALS}`);
+  }
+  
   const selectedFakes = scoredFakes.slice(0, TARGET_TOTAL - selectedReals.length);
   logStep(`Selected reals: ${selectedReals.length}, selected fakes: ${selectedFakes.length}`);
   const snippets = [...selectedReals, ...selectedFakes];

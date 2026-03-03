@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Caveat, IM_Fell_English, Playfair_Display, Playfair_Display_SC, UnifrakturMaguntia } from "next/font/google";
+import { VercelToolbar } from "@vercel/toolbar/next";
 import "./globals.css";
+import { CookieBanner } from "./components/CookieBanner";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -64,6 +66,8 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
+  const shouldInjectToolbar = process.env.NODE_ENV === "development";
+
   return (
     <html
       lang="en"
@@ -90,6 +94,16 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           </defs>
         </svg>
         {children}
+        <footer style={{ textAlign: 'center', padding: '2rem', fontSize: '0.875rem', color: '#666' }}>
+          <a href="/privacy" style={{ color: '#666', textDecoration: 'underline' }}>Privacy</a>
+          <span style={{ margin: '0 0.5rem' }}>·</span>
+          <a href="/about" style={{ color: '#666', textDecoration: 'underline' }}>About</a>
+          <div style={{ marginTop: '0.5rem' }}>
+            © {new Date().getFullYear()} Louis J Lombardo IV. All rights reserved.
+          </div>
+        </footer>
+        <CookieBanner />
+        {shouldInjectToolbar && <VercelToolbar />}
       </body>
     </html>
   );

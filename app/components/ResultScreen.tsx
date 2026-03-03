@@ -239,76 +239,6 @@ export function ResultScreen({
 
       <div style={{ marginBottom: 28 }}>
         <div className="subhead" style={{ marginBottom: 8 }}>
-          Your Record
-        </div>
-        <hr className="rule-thick" style={{ marginBottom: 10 }} />
-        {history.map((h, i) => {
-          const sourceLink = getLocSourceLink(h.snippet);
-          const sourceLabel = h.snippet.source || "Library of Congress";
-          return (
-            <div
-              key={i}
-              style={{
-                display: "flex",
-                gap: 10,
-                padding: "8px 0",
-                borderBottom: "1px solid var(--aged)",
-                alignItems: "flex-start",
-              }}
-            >
-              <span
-                style={{
-                  fontFamily: "'Playfair Display',serif",
-                  fontWeight: 900,
-                  fontSize: 16,
-                  flexShrink: 0,
-                  color: h.correct ? "var(--green)" : "var(--red)",
-                }}
-              >
-                {h.correct ? "✓" : "✗"}
-              </span>
-              <div style={{ flex: 1 }}>
-                <div className="headline" style={{ fontSize: 11, marginBottom: 2, opacity: 0.8 }}>
-                  {h.snippet.headline}
-                </div>
-                <div
-                  className="clipping-body"
-                  style={{ fontSize: 11, opacity: 0.65, lineHeight: 1.4 }}
-                >
-                  {h.snippet.text.slice(0, 100)}…
-                </div>
-                <div className="subhead" style={{ fontSize: 9, marginTop: 3 }}>
-                  {h.snippet.real ? (
-                    <>
-                      Real · {sourceLabel}
-                      {sourceLink ? (
-                        <>
-                          {" · "}
-                          <a
-                            href={sourceLink.href}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{ color: "inherit", textDecoration: "underline" }}
-                          >
-                            {sourceLink.label}
-                          </a>
-                        </>
-                      ) : null}
-                    </>
-                  ) : (
-                    "AI-Generated Fake"
-                  )}{" "}
-                  · You guessed:{" "}
-                  {h.guessReal ? "Real" : "Fake"}
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div style={{ marginBottom: 28 }}>
-        <div className="subhead" style={{ marginBottom: 8 }}>
           Read the Papers
         </div>
         <hr className="rule-thick" style={{ marginBottom: 12 }} />
@@ -461,16 +391,117 @@ export function ResultScreen({
         )}
       </div>
 
+      <div
+        className="clipping-paper"
+        style={{
+          padding: "24px 28px",
+          marginBottom: 28,
+          transform: "rotate(-1deg)",
+          textAlign: "center",
+        }}
+      >
+        <div className="clipping-paper-content">
+          <div className="headline" style={{ fontSize: 16, marginBottom: 12 }}>
+            We Generate A New Game <u>Every Day</u>
+          </div>
+          <div className="clipping-body" style={{ fontSize: 13, opacity: 0.9, marginBottom: 16, textAlign: "center" }}>
+            With Real Data from The Library Of Congress!
+          </div>
+          <a
+            href="/about"
+            style={{
+              display: "inline-block",
+              background: "var(--ink)",
+              color: "var(--cream)",
+              border: "1px solid var(--ink)",
+              padding: "8px 20px",
+              fontFamily: "var(--font-playfair-sc), Georgia, serif",
+              fontSize: 12,
+              letterSpacing: 2,
+              textTransform: "uppercase",
+              textDecoration: "none",
+              transform: "rotate(1deg)",
+            }}
+          >
+            About
+          </a>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 28 }}>
+        <div className="subhead" style={{ marginBottom: 8 }}>
+          Your Record
+        </div>
+        <hr className="rule-thick" style={{ marginBottom: 10 }} />
+        {history.map((h, i) => {
+          const sourceLink = getLocSourceLink(h.snippet);
+          const sourceLabel = h.snippet.source || "Library of Congress";
+          return (
+            <div
+              key={i}
+              style={{
+                display: "flex",
+                gap: 10,
+                padding: "8px 0",
+                borderBottom: "1px solid var(--aged)",
+                alignItems: "flex-start",
+              }}
+            >
+              <span
+                style={{
+                  fontFamily: "'Playfair Display',serif",
+                  fontWeight: 900,
+                  fontSize: 16,
+                  flexShrink: 0,
+                  color: h.correct ? "var(--green)" : "var(--red)",
+                }}
+              >
+                {h.correct ? "✓" : "✗"}
+              </span>
+              <div style={{ flex: 1 }}>
+                <div className="headline" style={{ fontSize: 11, marginBottom: 2, opacity: 0.8 }}>
+                  {h.snippet.headline}
+                </div>
+                <div
+                  className="clipping-body"
+                  style={{ fontSize: 11, opacity: 0.65, lineHeight: 1.4 }}
+                >
+                  {h.snippet.text.slice(0, 100)}…
+                </div>
+                <div className="subhead" style={{ fontSize: 9, marginTop: 3 }}>
+                  {h.snippet.real ? (
+                    <>
+                      Real · {sourceLabel}
+                      {sourceLink ? (
+                        <>
+                          {" · "}
+                          <a
+                            href={sourceLink.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ color: "inherit", textDecoration: "underline" }}
+                          >
+                            {sourceLink.label}
+                          </a>
+                        </>
+                      ) : null}
+                    </>
+                  ) : (
+                    "AI-Generated Fake"
+                  )}{" "}
+                  · You guessed:{" "}
+                  {h.guessReal ? "Real" : "Fake"}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
       <div style={{ textAlign: "center" }}>
         <StampButton onClick={handleRestart} color="var(--ink)">
           🗞 Print Another Edition
         </StampButton>
-        <div
-          className="clipping-body"
-          style={{ fontStyle: "italic", fontSize: 10, opacity: 0.35, marginTop: 10 }}
-        >
-          Each new game fetches fresh real clippings from the Library of Congress
-        </div>
       </div>
     </div>
   );

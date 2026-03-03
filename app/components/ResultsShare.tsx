@@ -249,12 +249,6 @@ export function ResultsShare({ score, total, title, sub, papers = [] }: ResultsS
           </button>
         ) : null}
       </div>
-      <div
-        className="clipping-body"
-        style={{ fontStyle: "italic", fontSize: 10, opacity: 0.5, marginTop: 8 }}
-      >
-        Share your score and help others find the papers.
-      </div>
     </div>
   );
 }
