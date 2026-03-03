@@ -8,6 +8,7 @@ export type Snippet = {
   pdfUrl?: string;
   imageUrl?: string;
   real: boolean;
+  thumbhash?: string;
 };
 
 export const LAYOUTS = ["broadside", "column", "notice", "feature", "classified"] as const;

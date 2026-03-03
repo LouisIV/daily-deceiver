@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import posthog from "posthog-js";
 import type { Snippet } from "@/lib/game/types";
 import { PaperTexture } from "@/lib/paper-texture-client";
+import { ThumbhashPlaceholder } from "@/lib/thumbhash-placeholder";
 import { getLocSourceLink, getLocSourceMedia } from "@/lib/game/source-link";
 
 const DefaultPostIt = (
@@ -35,9 +36,11 @@ export function PaperPreview({
   const sourceLabel = snippet.source || "Library of Congress";
   const fallbackHref = sourceMedia?.pageHref || sourceLink?.href || null;
   const [imageFailed, setImageFailed] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const showImagePreview = Boolean(sourceMedia?.mediaHref) && !imageFailed;
   const previewHref = sourceMedia?.mediaHref || undefined;
   const prefix = linkTypePrefix ? `${linkTypePrefix}_` : "";
+  const hasThumbhash = Boolean(snippet.thumbhash);
 
   const imageJitter = useMemo(() => {
     const key = `${snippet.headline}|${sourceMedia?.mediaHref || ""}`;
@@ -65,6 +68,7 @@ export function PaperPreview({
 
   useEffect(() => {
     setImageFailed(false);
+    setImageLoaded(false);
   }, [snippet.headline, sourceMedia?.mediaHref]);
 
   if (!showImagePreview) {
@@ -160,11 +164,33 @@ export function PaperPreview({
           intensityIOS={2.2}
           style={{ background: "var(--paper)" }}
         >
+          {/* Thumbhash placeholder - shown until image loads */}
+          {hasThumbhash && !imageLoaded && (
+            <ThumbhashPlaceholder
+              hash={snippet.thumbhash!}
+              className="paper-image"
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                opacity: imageLoaded ? 0 : 1,
+                transition: "opacity 0.3s ease",
+              }}
+            />
+          )}
           <img
             alt="Library of Congress clipping preview"
             src={sourceMedia?.mediaHref || ""}
             onError={() => setImageFailed(true)}
+            onLoad={() => setImageLoaded(true)}
             className="paper-image"
+            loading="lazy"
+            style={{
+              opacity: imageLoaded ? 1 : 0,
+              transition: "opacity 0.3s ease",
+            }}
           />
         </PaperTexture>
         {postIt && (
