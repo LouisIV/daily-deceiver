@@ -7,6 +7,7 @@ export type Snippet = {
   pageUrl?: string;
   source?: string;
   score?: number;
+  thumbhash?: string;
 };
 
 export type LocItem = Record<string, any>;

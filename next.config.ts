@@ -16,6 +16,22 @@ const nextConfig: NextConfig = {
   },
   // This is required to support PostHog trailing slash API requests
   skipTrailingSlashRedirect: true,
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "tile.loc.gov",
+      },
+      {
+        protocol: "https",
+        hostname: "**.loc.gov",
+      },
+      {
+        protocol: "https",
+        hostname: "chroniclingamerica.loc.gov",
+      },
+    ],
+  },
 };
 
 const withVercelToolbar = createWithVercelToolbar();

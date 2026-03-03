@@ -17,6 +17,8 @@ import {
 } from "./utils.js";
 import { loadOcrPrompt, ocrWithGemini } from "./ocr.js";
 import { findPdfUrl, findImageUrl, resolveResourceUrl } from "./loc-urls.js";
+import { rgbaToThumbHash, thumbHashToDataURL } from "thumbhash";
+import sharp from "sharp";
 
 // ---------------------------------------------------------------------------
 // HTTP utility
@@ -175,8 +177,44 @@ class LocPipeline {
     return ocrWithGemini(resource.imageUrl, this.promptConfig);
   }
 
+  // Generate thumbhash from image URL
+  private async generateThumbhash(imageUrl: string): Promise<string | null> {
+    try {
+      await sleep(LOC_REQUEST_DELAY_MS);
+      logStep("    Generating thumbhash…");
+      
+      // Fetch a small version of the image for thumbhash (max 100px)
+      const thumbUrl = imageUrl.replace(/\/full\/[^/]+\//, '/full/100,/');
+      const response = await fetch(thumbUrl, {
+        headers: { "User-Agent": "newspaper-game/1.0 (thumbhash-generator)" },
+      });
+      
+      if (!response.ok) {
+        logStep("    Failed to fetch thumbnail for thumbhash");
+        return null;
+      }
+      
+      const buffer = await response.arrayBuffer();
+      const processed = await sharp(Buffer.from(buffer))
+        .resize(100, 100, { fit: 'inside', withoutEnlargement: true })
+        .ensureAlpha()
+        .raw()
+        .toBuffer({ resolveWithObject: true });
+      
+      const { data, info } = processed;
+      const hash = rgbaToThumbHash(info.width, info.height, data);
+      const base64Hash = Buffer.from(hash).toString('base64');
+      
+      logStep(`    Thumbhash generated: ${base64Hash.slice(0, 20)}…`);
+      return base64Hash;
+    } catch (err) {
+      logStep(`    Thumbhash generation failed: ${err}`);
+      return null;
+    }
+  }
+
   // Stage 4: turn raw clippings into deduplicated Snippets and accumulate
-  private collectSnippets(resource: LocResource, clippings: OcrClipping[]): void {
+  private collectSnippets(resource: LocResource, clippings: OcrClipping[], thumbhash: string | null): void {
     if (!clippings.length) {
       logStep("  No clippings returned by OCR");
       return;
@@ -215,6 +253,7 @@ class LocPipeline {
         pageUrl: resource.pageUrl ?? undefined,
         source: resource.source,
         real: true,
+        thumbhash: thumbhash ?? undefined,
       });
       logStep(`  Added real snippet (${this.snippets.length}/${this.count})`);
     }
@@ -232,7 +271,8 @@ class LocPipeline {
         const resource = await this.resolveResource(item);
         if (!resource) continue;
         const clippings = await this.runOcr(resource);
-        this.collectSnippets(resource, clippings);
+        const thumbhash = await this.generateThumbhash(resource.imageUrl);
+        this.collectSnippets(resource, clippings, thumbhash);
       } catch {
         continue;
       }

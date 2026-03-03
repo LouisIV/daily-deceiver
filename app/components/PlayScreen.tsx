@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import posthog from "posthog-js";
 import type { Answered, HistoryItem, Round } from "@/lib/game/types";
@@ -8,8 +8,9 @@ import { Clipping } from "./Clipping";
 import { NewsButton } from "./NewsButton";
 import { StampButton } from "./StampButton";
 import { PaperTexture } from "@/lib/paper-texture-client";
-import { getLocSourceLink } from "@/lib/game/source-link";
+import { getLocSourceLink, getLocSourceMedia } from "@/lib/game/source-link";
 import { PaperPreview } from "./PaperPreview";
+import { preloadImage } from "@/lib/preload-image";
 
 const ReportIssueModal = dynamic(
   () => import("./ReportIssueModal").then((m) => ({ default: m.ReportIssueModal })),
@@ -36,6 +37,19 @@ export function PlayScreen({
   const sourceLink = getLocSourceLink(snippet);
   const sourceLabel = snippet.source || "Library of Congress";
   const [reportModalOpen, setReportModalOpen] = useState(false);
+
+  // Preload the paper image while user is guessing
+  useEffect(() => {
+    if (snippet.real && snippet.imageUrl) {
+      const sourceMedia = getLocSourceMedia(snippet);
+      if (sourceMedia?.mediaHref) {
+        // Start preloading immediately but don't block
+        preloadImage(sourceMedia.mediaHref).catch(() => {
+          // Silently fail - the image will load normally when needed
+        });
+      }
+    }
+  }, [snippet]);
 
   return (
     <div style={{ animation: "fadeUp 0.4s ease" }}>

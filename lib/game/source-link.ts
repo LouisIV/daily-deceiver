@@ -17,7 +17,11 @@ function cleanUrl(value: unknown): string | null {
 }
 
 function isLocUrl(url: string): boolean {
-  return /(^|\.)loc\.gov$/i.test(new URL(url).hostname);
+  try {
+    return /(^|\.)loc\.gov$/i.test(new URL(url).hostname);
+  } catch {
+    return false;
+  }
 }
 
 function deriveImageFromPdf(url: string): string[] {
