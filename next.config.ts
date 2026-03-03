@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import createWithVercelToolbar from "@vercel/toolbar/plugins/next";
 
 const nextConfig: NextConfig = {
   async rewrites() {
@@ -17,4 +18,5 @@ const nextConfig: NextConfig = {
   skipTrailingSlashRedirect: true,
 };
 
-export default nextConfig;
+const withVercelToolbar = createWithVercelToolbar();
+export default withVercelToolbar(nextConfig);

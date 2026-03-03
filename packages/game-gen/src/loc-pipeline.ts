@@ -105,7 +105,7 @@ class LocPipeline {
       "?" +
       new URLSearchParams({
         q: query,
-        dates: "1875-1920",
+        dates: "1875-1927",
         c: String(LOC_RESULTS_PER_QUERY),
         fo: "json",
       });

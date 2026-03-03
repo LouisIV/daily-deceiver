@@ -1,16 +1,41 @@
 import posthog from "posthog-js";
 
-posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
-  api_host: "/ingest",
-  ui_host: "https://us.posthog.com",
-  // Include the defaults option as required by PostHog
-  defaults: "2026-01-30",
-  // Enables capturing unhandled exceptions via Error Tracking
-  capture_exceptions: true,
-  // Turn on debug in development mode
-  debug: process.env.NODE_ENV === "development",
-});
+const COOKIE_CONSENT_KEY = "cookie_consent";
 
-// IMPORTANT: Never combine this approach with other client-side PostHog initialization
-// approaches, especially components like a PostHogProvider. instrumentation-client.ts
-// is the correct solution for initializing client-side PostHog in Next.js 15.3+ apps.
+const isDevelopment = process.env.NODE_ENV === "development";
+
+function hasGivenConsent(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem(COOKIE_CONSENT_KEY) === "granted";
+}
+
+if (!isDevelopment) {
+  posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
+    api_host: "/ingest",
+    ui_host: "https://us.posthog.com",
+    defaults: "2026-01-30",
+    capture_exceptions: true,
+    debug: false,
+    loaded: (posthog) => {
+      if (!hasGivenConsent()) {
+        posthog.opt_out_capturing();
+      }
+    },
+  });
+}
+
+export function acceptCookies() {
+  localStorage.setItem(COOKIE_CONSENT_KEY, "granted");
+  if (isDevelopment) return;
+  posthog.opt_in_capturing();
+}
+
+export function rejectCookies() {
+  localStorage.setItem(COOKIE_CONSENT_KEY, "denied");
+  if (isDevelopment) return;
+  posthog.opt_out_capturing();
+}
+
+export function hasConsent(): boolean {
+  return hasGivenConsent();
+}

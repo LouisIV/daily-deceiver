@@ -3,12 +3,8 @@
 import type { Phase } from "@/lib/game/types";
 
 export function Masthead({
-  score,
-  current,
   phase,
 }: {
-  score: number;
-  current: number;
   phase: Phase;
 }) {
   return (
@@ -52,18 +48,6 @@ export function Masthead({
         <span className="subhead" style={{ fontSize: 9 }}>
           Powered by the Library of Congress and Chronicling America
         </span>
-        {phase === "playing" && (
-          <span
-            style={{
-              fontFamily: "'Playfair Display',serif",
-              fontWeight: 700,
-              fontSize: 13,
-              color: "var(--ink)",
-            }}
-          >
-            Score: {score} / {current}
-          </span>
-        )}
 
       </div>
 
