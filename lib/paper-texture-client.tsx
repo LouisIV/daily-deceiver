@@ -272,7 +272,7 @@ export function PaperTexture({
   const effectiveIntensity = isDesktop ? intensity : (intensityIOS ?? intensity);
 
   return (
-    <div style={{ position: "relative", isolation: "isolate", ...style }}>
+    <div className="paper-texture" style={{ position: "relative", isolation: "isolate", ...style }}>
       <div style={{ position: "relative", zIndex: 0 }}>
         {children}
       </div>

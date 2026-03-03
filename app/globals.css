@@ -93,6 +93,33 @@ body {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
 }
 
+/* Clipping card: squiggle filter on paper layer only (edge wavy, content unchanged) */
+.clipping-paper {
+  position: relative;
+  overflow: hidden;
+}
+.clipping-paper::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: var(--cream);
+  border: 1px solid #c8b080;
+  box-shadow: 2px 3px 0 #bfa870, 4px 7px 22px rgba(0, 0, 0, 0.14);
+  filter: url(#squiggle);
+}
+.clipping-paper > .clipping-paper-content {
+  position: relative;
+  z-index: 1;
+}
+.clipping-paper-lead::before {
+  border: none;
+  border-top: 1px solid #c8b080;
+  border-right: 1px solid #c8b080;
+  border-bottom: 1px solid #c8b080;
+  border-left: 4px solid var(--ink);
+}
+
 @keyframes fadeUp {
   from {
     opacity: 0;
@@ -175,6 +202,7 @@ button:active {
 .paper-image-link .paper-texture {
   border-radius: 4px;
   box-shadow: 0 6px 16px rgba(28, 16, 8, 0.18);
+  clip-path: url(#paper-edge);
 }
 
 .paper-image {

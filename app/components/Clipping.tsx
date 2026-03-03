@@ -14,15 +14,10 @@ export function Clipping({
   const rot = [-0.6, 0.5, -0.4, 0.7, -0.3, 0.4][index % 6];
 
   const cardStyle = {
-    background: "var(--cream)",
-    border: "1px solid #c8b080",
-    boxShadow: "2px 3px 0 #bfa870, 4px 7px 22px rgba(0,0,0,0.14)",
     padding: "28px 32px",
     marginBottom: 8,
     transform: `rotate(${rot}deg)`,
     transition: "transform 0.4s cubic-bezier(.2,.8,.4,1)",
-    position: "relative" as const,
-    overflow: "hidden" as const,
   };
 
   const stain = (
@@ -43,9 +38,10 @@ export function Clipping({
 
   if (layout === "broadside")
     return (
-      <div style={cardStyle}>
-        {stain}
-        <hr className="rule-thick" />
+      <div className="clipping-paper" style={cardStyle}>
+        <div className="clipping-paper-content">
+          {stain}
+          <hr className="rule-thick" />
         <hr className="rule-thin" style={{ marginTop: 2, marginBottom: 10 }} />
 
         <div
@@ -65,14 +61,16 @@ export function Clipping({
 
         <hr className="rule-thin" style={{ marginTop: 12 }} />
         <hr className="rule-thick" style={{ marginTop: 2 }} />
+        </div>
       </div>
     );
 
   if (layout === "column")
     return (
-      <div style={cardStyle}>
-        {stain}
-        <div style={{ display: "flex", gap: 20 }}>
+      <div className="clipping-paper" style={cardStyle}>
+        <div className="clipping-paper-content">
+          {stain}
+          <div style={{ display: "flex", gap: 20 }}>
           <div
             style={{
               width: 90,
@@ -105,14 +103,16 @@ export function Clipping({
             <p className="clipping-body">{snippet.text}</p>
           </div>
         </div>
+        </div>
       </div>
     );
 
   if (layout === "notice")
     return (
-      <div style={{ ...cardStyle, textAlign: "center" }}>
-        {stain}
-        <div
+      <div className="clipping-paper" style={{ ...cardStyle, textAlign: "center" }}>
+        <div className="clipping-paper-content">
+          {stain}
+          <div
           className="ornament"
           style={{ fontSize: 20, marginBottom: 6, letterSpacing: 8 }}
         >
@@ -144,14 +144,16 @@ export function Clipping({
         >
           — ✦ —
         </div>
+        </div>
       </div>
     );
 
   if (layout === "feature")
     return (
-      <div style={cardStyle}>
-        {stain}
-        <hr className="rule-thick" />
+      <div className="clipping-paper" style={cardStyle}>
+        <div className="clipping-paper-content">
+          {stain}
+          <hr className="rule-thick" />
 
         <div
           style={{ display: "flex", alignItems: "baseline", gap: 10, margin: "8px 0" }}
@@ -182,21 +184,14 @@ export function Clipping({
         >
           <p className="clipping-body drop-cap">{snippet.text}</p>
         </div>
+        </div>
       </div>
     );
 
-  const { border: _b, ...restCardStyle } = cardStyle;
   return (
-    <div
-      style={{
-        ...restCardStyle,
-        borderTop: "1px solid #c8b080",
-        borderRight: "1px solid #c8b080",
-        borderBottom: "1px solid #c8b080",
-        borderLeft: "4px solid var(--ink)",
-      }}
-    >
-      {stain}
+    <div className="clipping-paper clipping-paper-lead" style={cardStyle}>
+      <div className="clipping-paper-content">
+        {stain}
       <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
         <div style={{ flexShrink: 0, width: 32, textAlign: "center" }}>
           <div className="ornament" style={{ fontSize: 24 }}>
@@ -214,6 +209,7 @@ export function Clipping({
             {snippet.text}
           </p>
         </div>
+      </div>
       </div>
     </div>
   );
