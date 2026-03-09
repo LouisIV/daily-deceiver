@@ -9,7 +9,10 @@ interface Entities {
 
 export const identify = dedupe(
   ({ cookies }: { cookies: ReadonlyRequestCookies }): Entities => {
-    const userId = cookies.get('ph_pid')?.value;
+    const cookieName = `ph_${process.env.NEXT_PUBLIC_POSTHOG_KEY}_posthog`;
+    const raw = cookies.get(cookieName)?.value;
+    const parsed = raw ? JSON.parse(decodeURIComponent(raw)) : null;
+    const userId = parsed?.distinct_id;
 
     if (!userId) {
       return {};
